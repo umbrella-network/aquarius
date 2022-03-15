@@ -9,6 +9,11 @@
     "node": ">=14.0.0"
   },
   "scripts": {
+    "lint": "eslint --ext .ts src/client/* && prettier --check \"src/client/**/*.ts\"",
+    "lint:fix": "eslint --ext .ts src/client/* --fix && prettier --write \"src/client/**/*.ts\"",
+    "prettier": "prettier ./src/client/**/*.ts --check",
+    "prettier:format": "prettier ./src/client/**/*.ts --write",
+    "format": "npm run lint:fix && npm run prettier:format",
     "start": "ts-node src/client/main.ts",
     "build:program-rust": "cargo build-bpf --manifest-path=./src/program-rust/Cargo.toml --bpf-out-dir=dist/program",
     "deploy:program-rust": "solana program deploy dist/program/block_root_mappings.so",
