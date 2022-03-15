@@ -76,17 +76,13 @@ npm run build:program-rust
 ```shell
 solana pogram deploy dist/program/{program_name}.so
 ```
-
 -or-
-
-9. Run tests, which include deployments:
-
-- For running rust tests
 ```shell
-npm run test:rust
+npm run deploy:program-rust
 ```
 
-- For running typescript client tests
+9. Run main script to test client against deployed program:
+
 ```shell
-npm run test:client
+npm run start
 ```
