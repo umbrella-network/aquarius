@@ -168,3 +168,4 @@ export async function reportGreetings(): Promise<void> {
     'time(s)',
   );
 }
+

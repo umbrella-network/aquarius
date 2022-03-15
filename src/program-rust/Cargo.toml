@@ -20,3 +20,4 @@ solana-sdk = "~1.8.14"
 [lib]
 name = "block_root_mappings"
 crate-type = ["cdylib", "lib"]
+
