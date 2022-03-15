@@ -51,9 +51,42 @@ solana-test-validator
 note: this will create a dir in the working directory called 'test-ledger' which will store the blockchain / log data for the validator.
 
 
-5. Create keypair
-6. Request airdrop
+5. Create keypair to use for testing:
+
+```shell
+solana-keygen new --force
+```
+This should create the following output file: ~/.config/solana/id.json
+
+6. Request some testnet SOL via airdrop program:
+
+```shell
+solana airdrop 5
+```
+note: sometimes 5 is too much - in that case retry with 2
+
 7. Compile rust programs / build bytecode artifacts
-8. Deploy to target cluster
-- or -
-9. Run tests, which include deployments
+
+```shell
+npm run build:program-rust
+```
+
+8. Deploy specific program to target cluster:
+
+```shell
+solana pogram deploy dist/program/{program_name}.so
+```
+
+-or-
+
+9. Run tests, which include deployments:
+
+- For running rust tests
+```shell
+npm run test:rust
+```
+
+- For running typescript client tests
+```shell
+npm run test:client
+```
