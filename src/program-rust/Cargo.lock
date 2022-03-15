@@ -2098,7 +2098,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "solana-bpf-helloworld"
+name = "solana-bpf-block-root-mappings"
 version = "0.0.1"
 dependencies = [
  "borsh",

@@ -1,3 +1,8 @@
 node_modules
 .idea
 test-ledger
+*.sw[po]
+/.cargo
+.env
+src/client/util/store
+.DS_Store
