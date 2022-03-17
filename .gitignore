@@ -1,3 +1,8 @@
 node_modules
 .idea
 test-ledger
+.anchor
+.DS_Store
+target
+**/*.rs.bk
+*.env
