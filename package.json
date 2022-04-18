@@ -1,12 +1,44 @@
 {
   "name": "aquarius",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/umbrella-network/aquarius.git"
   },
   "scripts": {
-    "build:program-rust": "cargo build-bpf --manifest-path=./src/program-rust/Cargo.toml --bpf-out-dir=dist/program",
-    "clean:program-rust": "cargo clean --manifest-path=./src/program-rust/Cargo.toml && rm -rf ./dist"
+    "lint": "eslint ./tests/**/*.ts --max-warnings=0",
+    "lint:fix": "eslint ./tests/**/*.ts --fix",
+    "prettier": "prettier --config .prettierrc ./tests/**/*.ts --check",
+    "prettier:format": "prettier --config .prettierrc ./tests/**/*.ts --write",
+    "format": "npm run lint:fix && npm run prettier:format",
+    "clean": "rm -rf target"
+  },
+  "dependencies": {
+    "@project-serum/anchor": "~0.22.1",
+    "@solana/spl-token": "~0.2.0",
+    "@solana/web3.js": "~1.36.0",
+    "@umb-network/toolbox": "~5.8.0",
+    "dotenv": "~16.0.0",
+    "toml": "~3.0.0"
+  },
+  "devDependencies": {
+    "@tsconfig/recommended": "~1.0.1",
+    "@types/chai": "~4.3.0",
+    "@types/eslint": "~8.2.2",
+    "@types/eslint-plugin-prettier": "~3.1.0",
+    "@types/mocha": "~9.0.0",
+    "@types/node": "^17.0.21",
+    "@types/prettier": "~2.1.5",
+    "@typescript-eslint/eslint-plugin": "~4.6.0",
+    "@typescript-eslint/parser": "~4.6.0",
+    "chai": "~4.3.4",
+    "eslint": "~7.12.1",
+    "eslint-config-prettier": "~6.15.0",
+    "eslint-plugin-prettier": "~4.0.0",
+    "mocha": "~9.0.3",
+    "prettier": "~2.1.2",
+    "ts-mocha": "~9.0.2",
+    "ts-node": "~10.7.0",
+    "typescript": "~4.3.5"
   }
 }

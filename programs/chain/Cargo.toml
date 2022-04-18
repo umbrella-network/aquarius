@@ -1,0 +1,19 @@
+[package]
+name = "chain"
+version = "0.1.0"
+description = "Umbrella program for writing data to solana"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "chain"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.22.1"
