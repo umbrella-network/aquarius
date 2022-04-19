@@ -306,7 +306,7 @@ describe('verify', async () => {
    const myAccount = anchor.web3.Keypair.generate();
 
    await program.rpc.computeRoot(
-     encodeBlockRoot(proof),
+     [encodeBlockRoot(proof),encodeBlockRoot(proof)],
      encodeBlockRoot(leaf),
      {
      accounts: {

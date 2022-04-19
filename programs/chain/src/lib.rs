@@ -84,7 +84,7 @@ pub mod chain {
         instructions::verify::initialize_block(ctx)
     }
 
-    pub fn compute_root(ctx: Context<ComputeRoot>, proof: [u8; 32], leaf: [u8; 32]) -> Result<()> {
+    pub fn compute_root(ctx: Context<ComputeRoot>, proof: Vec<[u8; 32]>, leaf: [u8; 32]) -> Result<()> {
         instructions::verify::compute_root(ctx, proof, leaf)
     }
 }
