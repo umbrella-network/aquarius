@@ -3,24 +3,6 @@ use crate::state::chain::*;
 use anchor_lang::prelude::*;
 use sha3::{Digest, Keccak256};
 
-//  function computeRoot(bytes32[] memory proof, bytes32 leaf) internal pure returns (bytes32) {
-//    bytes32 computedHash = leaf;
-//
-//    for (uint256 i = 0; i < proof.length; i++) {
-//      bytes32 proofElement = proof[i];
-//
-//      if (computedHash <= proofElement) {
-//        // Hash(current computed hash + current element of the proof)
-//        computedHash = keccak256(abi.encodePacked(computedHash, proofElement));
-//      } else {
-//        // Hash(current element of the proof + current computed hash)
-//        computedHash = keccak256(abi.encodePacked(proofElement, computedHash));
-//      }
-//    }
-//
-//    return computedHash;
-//  }
-
 pub fn compare_hashes(a: [u8; 32], b: [u8; 32]) -> bool {
     for (i, _) in a.iter().enumerate() {
         if a[i] < b[i] {

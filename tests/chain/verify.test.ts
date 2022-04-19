@@ -280,12 +280,6 @@ describe('verify', async () => {
   });
 
   it('initialize block account', async () => {
-    const proof : string = '0xa875e64b4762d5a34bf3b0346829c407fa82eaedb67d41c6aa4a350800000000';
-    const leaf : string = '0xa875e64b4762d5a34bf3b0346829c407fa82eaedb67d41c6aa4a350800000000';
-    console.log(encodeBlockRoot(proof))
-    console.log(encodeBlockRoot(leaf))
-
-
     await program.rpc.initializeBlock(
       {
         accounts: {
@@ -298,21 +292,24 @@ describe('verify', async () => {
   });
   
   it('computes a root hash', async () => {
-   const proof : string = '0xa875e64b4762d800000000000000000000000000000000000000000000000000';
-   const leaf : string = '0xa875e64b4762d800000000000000000000000000000000000000000000000000';
-   console.log(encodeBlockRoot(proof))
-   console.log(encodeBlockRoot(leaf))
+    const proofs = [
+      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
+      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
+      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    ]
+    const leaf = encodeBlockRoot('0xa389b4c169ee8d98bb3e0e348bb71bc2de39c93d9effe49c4aeb232025d6d0c9');
 
-   const myAccount = anchor.web3.Keypair.generate();
+    await program.rpc.computeRoot(
+      proofs, leaf,
+      {
+      accounts: {
+        block: blockAccount.publicKey,
+      },
+    });
 
-   await program.rpc.computeRoot(
-     [encodeBlockRoot(proof),encodeBlockRoot(proof)],
-     encodeBlockRoot(leaf),
-     {
-     accounts: {
-       block: blockAccount.publicKey,
-     },
-   });
+    let block = await program.account.block.fetch(blockAccount.publicKey);
+
+    expect(decodeBlockRoot(block.root)).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606');
   });
 
 /*
