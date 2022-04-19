@@ -5,7 +5,7 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("4SPgs3L7Ey9VyRuZwx4X3y86LSAZXP2Hhpz9Sps4v3iT");
+declare_id!("BihG3sjCdfDQF9HwoVTWRM1Es4NhFzU2axkgdJMv1YD9");
 
 #[program]
 pub mod chain {
@@ -78,5 +78,13 @@ pub mod chain {
             value,
             timestamp
         )
+    }
+
+    pub fn initialize_block(ctx: Context<InitializeBlock>) -> Result<()> {
+        instructions::verify::initialize_block(ctx)
+    }
+
+    pub fn compute_root(ctx: Context<ComputeRoot>, proof: [u8; 32], leaf: [u8; 32]) -> Result<()> {
+        instructions::verify::compute_root(ctx, proof, leaf)
     }
 }
