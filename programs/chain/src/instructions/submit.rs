@@ -16,7 +16,9 @@ pub fn submit(
 
     let now = Clock::get().unwrap().unix_timestamp;
     require!(
-        i64::from(ctx.accounts.status.last_data_timestamp + ctx.accounts.status.padding) < now,
+        i64::from(
+            ctx.accounts.status.last_data_timestamp + ctx.accounts.status.padding
+        ) < timestamp.into(),
         ChainError::DoNotSpam
     );
 
