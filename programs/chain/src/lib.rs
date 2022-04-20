@@ -80,11 +80,15 @@ pub mod chain {
         )
     }
 
-    pub fn initialize_block(ctx: Context<InitializeBlock>) -> Result<()> {
-        instructions::verify::initialize_block(ctx)
+    pub fn initialize_verify_result(ctx: Context<InitializeVerifyResult>) -> Result<()> {
+        instructions::verify::initialize_verify_result(ctx)
     }
 
     pub fn compute_root(ctx: Context<ComputeRoot>, proof: Vec<[u8; 32]>, leaf: [u8; 32]) -> Result<()> {
         instructions::verify::compute_root(ctx, proof, leaf)
+    }
+
+    pub fn verify(ctx: Context<Verify>, root: [u8; 32]) -> Result<()> {
+        instructions::verify::verify(ctx, root)
     }
 }

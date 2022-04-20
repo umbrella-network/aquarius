@@ -14,11 +14,10 @@ pub fn compare_hashes(a: [u8; 32], b: [u8; 32]) -> bool {
     true
 }
 
-pub fn initialize_block(ctx: Context<InitializeBlock>) -> Result<()> {
-    let block = &mut ctx.accounts.block;
-    block.block_id = 0;
-    block.root = [0u8; 32];
-    block.timestamp = 0;
+pub fn initialize_verify_result(ctx: Context<InitializeVerifyResult>) -> Result<()> {
+    let verify_result = &mut ctx.accounts.verify_result;
+    verify_result.root = [0u8; 32];
+    verify_result.result = false;
     Ok(())
 }
 
@@ -32,17 +31,25 @@ pub fn compute_root(ctx: Context<ComputeRoot>, proof: Vec<[u8; 32]>, leaf: [u8; 
             hasher.update([proof_element, computed_hash].concat());
         }
         computed_hash = hasher.finalize().into();
-        //msg!("computed_hash = {:?}", computed_hash);
-        //msg!("p = {:?} hash = {:?}", root, result);
     }
-    ctx.accounts.block.root = computed_hash;
+    ctx.accounts.verify_result.root = computed_hash;
+    Ok(())
+}
+
+pub fn verify(ctx: Context<Verify>, root: [u8; 32]) -> Result<()> {
+    let verify_result = &mut ctx.accounts.verify_result;
+    if verify_result.root == root {
+        verify_result.result = true;
+    } else {
+        verify_result.result = false;
+    }
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct InitializeBlock<'info> {
-    #[account(init, payer = user, space = 8 + 4 + 32 + 4)]
-    pub block: Account<'info, Block>,
+pub struct InitializeVerifyResult<'info> {
+    #[account(init, payer = user, space = 8 + 32 + 1)]
+    pub verify_result: Account<'info, VerifyResult>,
     #[account(mut)]
     pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -51,5 +58,11 @@ pub struct InitializeBlock<'info> {
 #[derive(Accounts)]
 pub struct ComputeRoot<'info> {
     #[account(mut)]
-    pub block: Account<'info, Block>,
+    pub verify_result: Account<'info, VerifyResult>,
+}
+
+#[derive(Accounts)]
+pub struct Verify<'info> {
+    #[account(mut)]
+    pub verify_result: Account<'info, VerifyResult>
 }

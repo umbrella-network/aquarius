@@ -31,3 +31,10 @@ pub struct FirstClassData {
     pub value: [u8; 32],
     pub timestamp: u32
 }
+
+#[account]
+#[derive(Default)]
+pub struct VerifyResult {
+    pub root: [u8; 32],
+    pub result: bool,
+}

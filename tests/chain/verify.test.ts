@@ -14,6 +14,7 @@ import {
   encodeDataValue,
   decodeDataValue,
 } from '../utils';
+import { assert } from 'console';
 
 function getFirstBlockData() {
   const blockId = 343062;
@@ -163,12 +164,9 @@ describe('verify', async () => {
     );
   }
 
-  let blockAccount;
   before(async () => {
     anchor.setProvider(anchor.Provider.env());
     ({ blockId, blockRoot, timestamp } = getFirstBlockData());
-
-    blockAccount = anchor.web3.Keypair.generate();
   });
 
   afterEach(async () => {
@@ -184,114 +182,56 @@ describe('verify', async () => {
     expect(programId.toBase58()).to.equal(getAddressFromToml('chain'));
   });
 
-  it('fails to create a block before initialized', async () => {
-
-    try {
-      const [blockPda, _] = await createBlock(
-        blockId,
-        blockRoot,
-        timestamp
-      );
-    } catch(err) {
-      expect(err.toString().includes('expected this account to be already initialized')).to.equal(true);
-    }
-  });
-
-  
-  it('should fail to initialize from an unauthorized account', async () => {
-    const newKeyPair = Keypair.generate();
-    const newWallet = new Wallet(newKeyPair);
-
-    const newProvider = new Provider(
-      anchor.getProvider().connection,
-      newWallet,
-      anchor.getProvider().opts
-    );
-
-    anchor.setProvider(newProvider);
-    program = getDeployedProgram();
-
-    const airdropSignature = await newProvider.connection.requestAirdrop(
-      newKeyPair.publicKey,
-      LAMPORTS_PER_SOL * 2,
-    );
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    const padding = 10;
-
-    await newProvider.connection.confirmTransaction(airdropSignature);
-    try {
-      await program.rpc.initialize(
-        padding,
-        {
-          accounts: {
-            initializer: anchor.getProvider().wallet.publicKey,
-            authority: authorityPda,
-            status: statusPda,
-            systemProgram: SystemProgram.programId,
-          },
-        }
-      );
-    } catch(err) {
-      // the error message will include the custom program error
-      expect(err.toString().includes('NotInitializer')).to.equal(true);
-    }
-  });
-
-  it('initializes program', async () => {
-    const padding = 10;
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    await program.rpc.initialize(
-      padding,
+  it('initialize `VerifyResult` account', async () => {
+    const verifyResultAccount = anchor.web3.Keypair.generate();
+    await program.rpc.initializeVerifyResult(
       {
         accounts: {
-          initializer: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          status: statusPda,
-          systemProgram: SystemProgram.programId,
-        },
-      }
-    );
-
-    expect((await program.account.status.fetch(statusPda)).padding).to.equal(padding);
-    expect((await program.account.status.fetch(statusPda)).lastId).to.equal(0);
-    expect((await program.account.status.fetch(statusPda)).lastDataTimestamp).to.equal(0);
-    expect((await program.account.status.fetch(statusPda)).nextBlockId).to.equal(0);
-
-    expect(
-      (await program.account.authority.fetch(authorityPda))
-        .owner
-        .toBase58()
-    ).to.equal(
-      anchor.getProvider()
-        .wallet
-        .publicKey
-        .toBase58()
-    );
-  });
-
-  it('initialize block account', async () => {
-    await program.rpc.initializeBlock(
-      {
-        accounts: {
-          block: blockAccount.publicKey,
+          verifyResult: verifyResultAccount.publicKey,
           user: anchor.getProvider().wallet.publicKey,
           systemProgram: SystemProgram.programId,
         },
-        signers: [blockAccount],
-    });
+        signers: [verifyResultAccount],
+      });
   });
   
-  it('computes a root hash', async () => {
+  it('does not compute the root hash from an uninitialized account', async () => {
+    const verifyResultAccount = anchor.web3.Keypair.generate();
+
+    const proofs = [
+      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
+      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
+      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    ]
+    const leaf = encodeBlockRoot('0xa389b4c169ee8d98bb3e0e348bb71bc2de39c93d9effe49c4aeb232025d6d0c9');
+
+    try {
+      await program.rpc.computeRoot(
+        proofs, leaf,
+        {
+        accounts: {
+          verifyResult: verifyResultAccount.publicKey,
+        },
+      });
+      assert(false);
+    } catch (err) {
+      expect(err.toString().includes('The program expected this account to be already initialized')).to.equal(true);
+    }
+  });
+
+  it('computes the root hash', async () => {
+    const verifyResultAccount = anchor.web3.Keypair.generate();
+
+    await program.rpc.initializeVerifyResult(
+      {
+        accounts: {
+          verifyResult: verifyResultAccount.publicKey,
+          user: anchor.getProvider().wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+        signers: [verifyResultAccount],
+      });
+
     const proofs = [
       encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
       encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
@@ -303,15 +243,102 @@ describe('verify', async () => {
       proofs, leaf,
       {
       accounts: {
-        block: blockAccount.publicKey,
+        verifyResult: verifyResultAccount.publicKey,
       },
     });
 
-    let block = await program.account.block.fetch(blockAccount.publicKey);
+    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
 
-    expect(decodeBlockRoot(block.root)).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606');
+    expect(decodeBlockRoot(result.root)).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606');
   });
 
+  it('passes the on-chain verification of a valid proof', async () => {
+
+    const verifyResultAccount = anchor.web3.Keypair.generate();
+
+    await program.rpc.initializeVerifyResult(
+      {
+        accounts: {
+          verifyResult: verifyResultAccount.publicKey,
+          user: anchor.getProvider().wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+        signers: [verifyResultAccount],
+    });
+
+    const proofs = [
+      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
+      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
+      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    ]
+    const leaf = encodeBlockRoot('0xa389b4c169ee8d98bb3e0e348bb71bc2de39c93d9effe49c4aeb232025d6d0c9');
+
+    await program.rpc.computeRoot(
+      proofs, leaf,
+      {
+      accounts: {
+        verifyResult: verifyResultAccount.publicKey,
+      },
+    });
+
+    const expectedResult = encodeBlockRoot('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606');
+
+    await program.rpc.verify(
+      expectedResult, 
+      {
+      accounts: {
+        verifyResult: verifyResultAccount.publicKey,
+      },
+    });
+
+    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
+
+    expect(result.result).to.equal(true);
+  });
+
+  it('does not pass the on-chain verification of a tempered proof', async () => {
+
+    const verifyResultAccount = anchor.web3.Keypair.generate();
+
+    await program.rpc.initializeVerifyResult(
+      {
+        accounts: {
+          verifyResult: verifyResultAccount.publicKey,
+          user: anchor.getProvider().wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+        signers: [verifyResultAccount],
+    });
+
+    const proofs = [
+      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
+      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
+      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f07deadbeef'),
+    ]
+    const leaf = encodeBlockRoot('0xa389b4c169ee8d98bb3e0e348bb71bc2de39c93d9effe49c4aeb232025d6d0c9');
+
+    await program.rpc.computeRoot(
+      proofs, leaf,
+      {
+      accounts: {
+        verifyResult: verifyResultAccount.publicKey,
+      },
+    });
+
+    const expectedResult = encodeBlockRoot('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606');
+
+    await program.rpc.verify(
+      expectedResult, 
+      {
+      accounts: {
+        verifyResult: verifyResultAccount.publicKey,
+      },
+    });
+
+    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
+
+    expect(result.result).to.equal(false);
+  });
 /*
   it('should fail to initialize program again', async () => {
     const padding = 10;
