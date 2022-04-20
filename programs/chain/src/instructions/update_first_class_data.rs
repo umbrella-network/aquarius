@@ -18,9 +18,8 @@ pub fn update_first_class_data(
         ChainError::CannotSubmitOlderData
     );
 
-    let now = Clock::get().unwrap().unix_timestamp;
     require!(
-        i64::from(ctx.accounts.fcd.timestamp + ctx.accounts.status.padding) < now,
+        i64::from(ctx.accounts.fcd.timestamp + ctx.accounts.status.padding) < timestamp.into(),
         ChainError::DoNotSpam
     );
 

@@ -3,8 +3,6 @@ seeds = false
 
 [programs.localnet]
 chain = "4SPgs3L7Ey9VyRuZwx4X3y86LSAZXP2Hhpz9Sps4v3iT"
-registry = "FvxxaLXrGTjid2E8qKgjsDV9thgy2KJfTUmraaEDj1Sx"
-consumer = "CxzSm4TBFGDMY5Zvx3oJVtLYmxNQ7VTCGNKUf8cMmGk7"
 
 [registry]
 url = "https://anchor.projectserum.com"
