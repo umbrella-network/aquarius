@@ -35,42 +35,6 @@ describe('verify', async () => {
     blockRoot: string,
     timestamp: number;
 
-  const createBlock = async (blockId: number, blockRoot: string, timestamp: number): Promise<[PublicKey, Buffer]> => {
-    const [blockPda, seed] = await derivePDAFromBlockId(
-      blockId,
-      program.programId
-    );
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    // test
-    const additionalAccount = Keypair.generate().publicKey;
-
-    await program.rpc.submit(
-      seed,
-      blockId,
-      encodeBlockRoot(blockRoot),
-      timestamp,
-      {
-        accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          block: blockPda,
-          status: statusPda,
-          systemProgram: SystemProgram.programId,
-        },
-      },
-    );
-
-    return [
-      blockPda,
-      seed
-    ]
-  }
-
   const getStateStructPDAs = async (programIdArg) => {
     const authorityPda = await getPublicKeyForSeed(
       'authority',
@@ -88,74 +52,6 @@ describe('verify', async () => {
     ];
   }
 
-  const createFCD = async (
-    key: string,
-    value: number | string,
-    timestamp: number
-  ): Promise<[PublicKey, Buffer]> => {
-    const [fcdPda, seed] = await derivePDAFromFCDKey(
-      key,
-      program.programId
-    );
-
-    const [
-      authorityPda
-    ] = await getStateStructPDAs(programId);
-
-    await program.rpc.initializeFirstClassData(
-      seed,
-      key,
-      encodeDataValue(value, key),
-      timestamp,
-      {
-        accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          fcd: fcdPda,
-          systemProgram: SystemProgram.programId,
-        },
-      },
-    );
-
-    return [
-      fcdPda,
-      seed
-    ]
-  }
-
-  const updateFCD = async (
-    key: string,
-    value: number | string,
-    timestamp: number
-  ): Promise<PublicKey> => {
-    const [fcdPda, _] = await derivePDAFromFCDKey(
-      key,
-      program.programId
-    );
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    await program.rpc.updateFirstClassData(
-      key,
-      encodeDataValue(value, key),
-      timestamp,
-      {
-        accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          fcd: fcdPda,
-          status: statusPda,
-          systemProgram: SystemProgram.programId,
-        },
-      },
-    );
-
-    return fcdPda
-  }
-
   const getDeployedProgram = () => {
     return new Program(
       idl,
@@ -167,11 +63,6 @@ describe('verify', async () => {
   before(async () => {
     anchor.setProvider(anchor.Provider.env());
     ({ blockId, blockRoot, timestamp } = getFirstBlockData());
-  });
-
-  afterEach(async () => {
-    anchor.setProvider(anchor.Provider.env());
-    program = getDeployedProgram();
   });
 
   it('deploys new program', async() => {
@@ -339,6 +230,9 @@ describe('verify', async () => {
 
     expect(result.result).to.equal(false);
   });
+  /*
+  */
+
 /*
   it('should fail to initialize program again', async () => {
     const padding = 10;

@@ -1,11 +1,12 @@
 use anchor_lang::prelude::*;
 use instructions::*;
+use state::*;
 
 pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("BihG3sjCdfDQF9HwoVTWRM1Es4NhFzU2axkgdJMv1YD9");
+declare_id!("EbSepbFDoxkv8LEuLg8ZDtSJimpgivb1ETvBoRKQF7DT");
 
 #[program]
 pub mod chain {
@@ -91,4 +92,28 @@ pub mod chain {
     pub fn verify(ctx: Context<Verify>, root: [u8; 32]) -> Result<()> {
         instructions::verify::verify(ctx, root)
     }
+}
+
+//#[derive(Accounts)]
+//pub struct CpiReturn<'info> {
+//    pub verify_result: Account<'info, VerifyResult>
+//}
+
+#[derive(Accounts)]
+pub struct Initialize1<'info> {
+    #[account(init, payer = user, space = 8 + 8)]
+    pub account: Account<'info, CpiReturnAccount>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CpiReturn<'info> {
+    pub account: Account<'info, CpiReturnAccount>,
+}
+
+#[account]
+pub struct CpiReturnAccount {
+    pub value: u64,
 }
