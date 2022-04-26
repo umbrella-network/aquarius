@@ -159,7 +159,44 @@ describe('verify', async () => {
         signers: [verifyResultAccount],
       });
   });
+
+  it('creates block, using blockId to generate pda', async () => {
+    const [blockPda, _] = await createBlock(
+      1234,
+      '0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605',
+      1234567
+    );
+
+    expect(
+      decodeBlockRoot((await program.account.block.fetch(blockPda)).root)
+    ).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605');
+    expect((await program.account.block.fetch(blockPda)).blockId).to.equal(1234);
+    expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(1234567);
+  });
+
+  it('fails to create another block with the same information as the previous one', async () => {
+    try {
+      const [blockPda, _] = await createBlock(
+        1234,
+        '0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605',
+        1234567
+      );
+    } catch (err) {
+      expect(err.logs.find(log => log.includes("Allocate: account Address") && log.includes("already in use")) !== undefined);
+    }
+  });
+
+  it('verifies the proof of a submitted block', async () => {
+    const [blockPda, _] = await createBlock(
+      1235,
+      '0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606',
+      1234568
+    );
+
+
+  });
   
+  /*
   it('does not compute the root hash from an uninitialized account', async () => {
     const verifyResultAccount = anchor.web3.Keypair.generate();
 
@@ -305,22 +342,7 @@ describe('verify', async () => {
     expect(result.result).to.equal(false);
   });
 
-  it('creates block, using blockId to generate pda', async () => {
-    const [blockPda, _] = await createBlock(
-      blockId,
-      blockRoot,
-      timestamp
-    );
-
-    expect(
-      decodeBlockRoot(
-        (await program.account.block.fetch(blockPda)).root
-      )
-    ).to.equal(blockRoot);
-
-    expect((await program.account.block.fetch(blockPda)).blockId).to.equal(blockId);
-    expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(timestamp);
-  });
+  */
 
 /*
   it('should fail to initialize program again', async () => {
