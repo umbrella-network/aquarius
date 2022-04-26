@@ -1,8 +1,6 @@
-use crate::{errors::ChainError};
 use crate::state::chain::*;
 use anchor_lang::prelude::*;
 use sha3::{Digest, Keccak256};
-
 
 pub fn initialize_verify_result(ctx: Context<InitializeVerifyResult>) -> Result<()> {
     let verify_result = &mut ctx.accounts.verify_result;
@@ -10,11 +8,14 @@ pub fn initialize_verify_result(ctx: Context<InitializeVerifyResult>) -> Result<
     Ok(())
 }
 
-pub fn verify_proof_for_block(ctx: Context<Verify>, 
+pub fn verify_proof_for_block(
+    ctx: Context<Verify>, 
     _seed: Vec<u8>,
-    proof: Vec<[u8;32]>, key: [u8;32], value: [u8;32]) -> Result<()> {
-    let root_with_timestamp = ctx.accounts.block.root;
-    let squashed_root = extract_root(root_with_timestamp);
+    proof: Vec<[u8;32]>,
+    key: [u8;32],
+    value: [u8;32]
+) -> Result<()> {
+    let squashed_root = ctx.accounts.block.root;
 
     let mut hasher = Keccak256::new();
     hasher.update([key, value].concat());
