@@ -97,6 +97,7 @@ describe('verify', async () => {
     );
   }
 
+  const verifyResultAccount = anchor.web3.Keypair.generate();
   before(async () => {
     anchor.setProvider(anchor.Provider.env());
     ({ blockId, blockRoot, timestamp } = getFirstBlockData());
@@ -148,7 +149,6 @@ describe('verify', async () => {
   });
 
   it('initialize `VerifyResult` account', async () => {
-    const verifyResultAccount = anchor.web3.Keypair.generate();
     await program.rpc.initializeVerifyResult(
       {
         accounts: {
@@ -187,672 +187,88 @@ describe('verify', async () => {
   });
 
   it('verifies the proof of a submitted block', async () => {
-    const [blockPda, _] = await createBlock(
+    const [blockPda, seed] = await createBlock(
       1235,
-      '0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606',
+      '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
       1234568
     );
+    const proofs = [
+      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
+      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
+      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    ]
+    const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
+    const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
 
+    const tx = await program.methods
+      .verifyProofForBlock(seed, proofs, key, value)
+      .accounts({
+          verifyResult: verifyResultAccount.publicKey,
+          block: blockPda,
+        })
+      .rpc({commitment: "confirmed"})
 
+    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
+    expect(result.result == true)
+  });
+
+  it('fails for false proofs', async () => {
+    const [blockPda, seed] = await createBlock(
+      1236,
+      '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
+      1234569
+    );
+    const proofs = [
+      encodeBlockRoot('0xdeadbeaf547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
+      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
+      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    ]
+    const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
+    const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
+
+    const tx = await program.methods
+      .verifyProofForBlock(seed, proofs, key, value)
+      .accounts({
+          verifyResult: verifyResultAccount.publicKey,
+          block: blockPda,
+        })
+      .rpc({commitment: "confirmed"})
+
+    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
+    expect(result.result == false)
+  });
+
+  it('fails for a tempered block', async () => {
+    const [blockPda, seed] = await createBlock(
+      1237,
+      '0xdeadbeef031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
+      1234570
+    );
+    const proofs = [
+      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
+      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
+      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    ]
+    const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
+    const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
+
+    const tx = await program.methods
+      .verifyProofForBlock(seed, proofs, key, value)
+      .accounts({
+          verifyResult: verifyResultAccount.publicKey,
+          block: blockPda,
+        })
+      .rpc({commitment: "confirmed"})
+
+    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
+    expect(result.result == false)
   });
   
   /*
-  it('does not compute the root hash from an uninitialized account', async () => {
-    const verifyResultAccount = anchor.web3.Keypair.generate();
-
-    const proofs = [
-      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
-      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
-      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
-    ]
-    const leaf = encodeBlockRoot('0xa389b4c169ee8d98bb3e0e348bb71bc2de39c93d9effe49c4aeb232025d6d0c9');
-
-    try {
-      await program.rpc.computeRoot(
-        proofs, leaf,
-        {
-        accounts: {
-          verifyResult: verifyResultAccount.publicKey,
-        },
-      });
-      assert(false);
-    } catch (err) {
-      expect(err.toString().includes('The program expected this account to be already initialized')).to.equal(true);
-    }
-  });
-
-  it('computes the root hash', async () => {
-    const verifyResultAccount = anchor.web3.Keypair.generate();
-
-    await program.rpc.initializeVerifyResult(
-      {
-        accounts: {
-          verifyResult: verifyResultAccount.publicKey,
-          user: anchor.getProvider().wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
-        signers: [verifyResultAccount],
-      });
-
-    const proofs = [
-      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
-      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
-      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
-    ]
-    const leaf = encodeBlockRoot('0xa389b4c169ee8d98bb3e0e348bb71bc2de39c93d9effe49c4aeb232025d6d0c9');
-
-    await program.rpc.computeRoot(
-      proofs, leaf,
-      {
-      accounts: {
-        verifyResult: verifyResultAccount.publicKey,
-      },
+    console.log(tx);
+    let t = await anchor.getProvider().connection.getTransaction(tx, {
+      commitment: "confirmed",
     });
-
-    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
-
-    expect(decodeBlockRoot(result.root)).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606');
-  });
-
-  it('passes the on-chain verification of a valid proof', async () => {
-
-    const verifyResultAccount = anchor.web3.Keypair.generate();
-
-    await program.rpc.initializeVerifyResult(
-      {
-        accounts: {
-          verifyResult: verifyResultAccount.publicKey,
-          user: anchor.getProvider().wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
-        signers: [verifyResultAccount],
-    });
-
-    const proofs = [
-      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
-      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
-      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
-    ]
-    const leaf = encodeBlockRoot('0xa389b4c169ee8d98bb3e0e348bb71bc2de39c93d9effe49c4aeb232025d6d0c9');
-
-    await program.rpc.computeRoot(
-      proofs, leaf,
-      {
-      accounts: {
-        verifyResult: verifyResultAccount.publicKey,
-      },
-    });
-
-    const expectedResult = encodeBlockRoot('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606');
-
-    await program.rpc.verify(
-      expectedResult, 
-      {
-      accounts: {
-        verifyResult: verifyResultAccount.publicKey,
-      },
-    });
-
-    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
-
-    expect(result.result).to.equal(true);
-  });
-
-  it('does not pass the on-chain verification of a tempered proof', async () => {
-
-    const verifyResultAccount = anchor.web3.Keypair.generate();
-
-    await program.rpc.initializeVerifyResult(
-      {
-        accounts: {
-          verifyResult: verifyResultAccount.publicKey,
-          user: anchor.getProvider().wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
-        signers: [verifyResultAccount],
-    });
-
-    const proofs = [
-      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
-      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
-      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f07deadbeef'),
-    ]
-    const leaf = encodeBlockRoot('0xa389b4c169ee8d98bb3e0e348bb71bc2de39c93d9effe49c4aeb232025d6d0c9');
-
-    await program.rpc.computeRoot(
-      proofs, leaf,
-      {
-      accounts: {
-        verifyResult: verifyResultAccount.publicKey,
-      },
-    });
-
-    const expectedResult = encodeBlockRoot('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de606');
-
-    await program.rpc.verify(
-      expectedResult, 
-      {
-      accounts: {
-        verifyResult: verifyResultAccount.publicKey,
-      },
-    });
-
-    let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
-
-    expect(result.result).to.equal(false);
-  });
-
-  */
-
-/*
-  it('should fail to initialize program again', async () => {
-    const padding = 10;
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    try {
-      await program.rpc.initialize(
-        padding,
-        {
-          accounts: {
-            initializer: anchor.getProvider().wallet.publicKey,
-            authority: authorityPda,
-            status: statusPda,
-            systemProgram: SystemProgram.programId,
-          },
-        }
-      );
-    } catch(err) {
-      // this substring in the error message indicates that we tried to init an account the same address
-      expect(err.toString().includes('Transaction simulation failed')).to.equal(true);
-    }
-
-    expect(
-      (await program.account.authority.fetch(authorityPda))
-        .owner
-        .toBase58()
-    ).to.equal(
-      anchor.getProvider()
-        .wallet
-        .publicKey
-        .toBase58()
-    );
-  });
-
-  it('uses deployed program to check authority account values', async () => {
-    const authorityPda = await getPublicKeyForSeed(
-      'authority',
-      program.programId
-    );
-
-    expect(
-      (await program.account.authority.fetch(authorityPda))
-        .owner
-        .toBase58()
-    ).to.equal(
-      anchor.getProvider()
-        .wallet
-        .publicKey
-        .toBase58()
-    );
-  });
-
-  it('should fail to change owner without new owner signature', async () => {
-    const newOwnerKeyPair = Keypair.generate();
-
-    const authorityPda = await getPublicKeyForSeed(
-      'authority',
-      program.programId
-    );
-
-    try {
-      await program.rpc.transferOwnership(
-        {
-          accounts: {
-            owner: anchor.getProvider().wallet.publicKey,
-            authority: authorityPda,
-            newOwner: newOwnerKeyPair.publicKey,
-            systemProgram: SystemProgram.programId,
-          },
-          //signers: [newOwnerKeyPair]
-        },
-      );
-    } catch(err) {
-      // this substring in the error message indicates that a signature is missing
-      expect(err.toString().includes('Signature verification failed')).to.equal(true);
-    }
-  });
-
-  it('should change owner', async () => {
-    const newOwnerKeyPair = Keypair.generate();
-
-    const authorityPda = await getPublicKeyForSeed(
-      'authority',
-      program.programId
-    );
-
-    await program.rpc.transferOwnership(
-      {
-        accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          newOwner: newOwnerKeyPair.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
-        signers: [newOwnerKeyPair]
-      },
-    );
-
-    expect(
-      (await program.account.authority.fetch(authorityPda))
-        .owner
-        .toBase58()
-    ).to.equal(
-      newOwnerKeyPair
-        .publicKey
-        .toBase58()
-    );
-
-    // change owner back
-    await program.rpc.transferOwnership(
-      {
-        accounts: {
-          owner: newOwnerKeyPair.publicKey,
-          authority: authorityPda,
-          newOwner:  anchor.getProvider().wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
-        signers: [newOwnerKeyPair]
-      },
-    );
-  });
-
-  it('should fail to change owner by unauthorized user', async () => {
-    const unauthorizedKeyPair = Keypair.generate();
-    const newOwnerKeyPair = Keypair.generate();
-
-    const authorityPda = await getPublicKeyForSeed(
-      'authority',
-      program.programId
-    );
-
-    try {
-      await program.rpc.transferOwnership(
-        {
-          accounts: {
-            owner: unauthorizedKeyPair.publicKey,
-            authority: authorityPda,
-            newOwner: newOwnerKeyPair.publicKey,
-            systemProgram: SystemProgram.programId,
-          },
-          signers: [unauthorizedKeyPair, newOwnerKeyPair]
-        },
-      );
-    } catch(err) {
-      // the error message will include the custom program error
-      expect(err.toString().includes('OnlyOwnerViolation')).to.equal(true);
-    }
-  });
-
-  it('creates block, using blockId to generate pda', async () => {
-    const [blockPda, _] = await createBlock(
-      blockId,
-      blockRoot,
-      timestamp
-    );
-
-    expect(
-      decodeBlockRoot(
-        (await program.account.block.fetch(blockPda)).root
-      )
-    ).to.equal(blockRoot);
-
-    expect((await program.account.block.fetch(blockPda)).blockId).to.equal(blockId);
-    expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(timestamp);
-  });
-
-  it('uses deployed program to check block values, from generated block PDA', async () => {
-    const deployedProgram = getDeployedProgram();
-    const [blockPda, _] = await derivePDAFromBlockId(
-      blockId,
-      deployedProgram.programId
-    );
-
-    expect(
-      decodeBlockRoot(
-        (await program.account.block.fetch(blockPda)).root
-      )
-    ).to.equal(blockRoot);
-
-    expect((await program.account.block.fetch(blockPda)).blockId).to.equal(blockId);
-    expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(timestamp);
-  });
-
-  it('uses deployed program to check chain-data values', async () => {
-    const deployedProgram = getDeployedProgram();
-    const statusPda = await getPublicKeyForSeed(
-      'status',
-      program.programId
-    );
-
-    expect((await deployedProgram.account.status.fetch(statusPda)).lastId).to.equal(blockId);
-    expect((await deployedProgram.account.status.fetch(statusPda)).lastDataTimestamp).to.equal(timestamp);
-    expect((await deployedProgram.account.status.fetch(statusPda)).nextBlockId).to.equal(blockId + 1);
-  });
-
-  const testBlocks = [
-    // does not include blockRoot, as this does not update the blockData struct
-    { _blockId: 343063, _timestamp: 1647469326 },
-    { _blockId: 343064, _timestamp: 1647469427 },
-    { _blockId: 343065, _timestamp: 1647469528 },
-    { _blockId: 343070, _timestamp: 1647469629 },
-  ];
-
-  testBlocks.forEach(({_blockId, _timestamp}) => {
-    it('create block and confirm block data struct is updated', async () => {
-      const [blockPda, _] = await createBlock(
-        _blockId,
-        blockRoot,
-        _timestamp
-      );
-
-      expect(
-        decodeBlockRoot(
-          (await program.account.block.fetch(blockPda)).root
-        )
-      ).to.equal(blockRoot);
-
-      expect((await program.account.block.fetch(blockPda)).blockId).to.equal(_blockId);
-      expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(_timestamp);
-
-      const statusPda = await getPublicKeyForSeed(
-        'status',
-        program.programId
-      );
-
-      expect((await program.account.status.fetch(statusPda)).lastId).to.equal(_blockId);
-      expect((await program.account.status.fetch(statusPda)).lastDataTimestamp).to.equal(_timestamp);
-      expect((await program.account.status.fetch(statusPda)).nextBlockId).to.equal(_blockId + 1);
-    });
-  });
-
-  it('should fail to re-submit the same block', async () => {
-    try {
-      const [blockPda, _] = await createBlock(
-        blockId,
-        blockRoot,
-        timestamp
-      );
-    } catch(err) {
-      // this substring in the error message indicates that we tried to init an account the same address
-      expect(err.toString().includes('Transaction simulation failed')).to.equal(true);
-    }
-  });
-
-  it('should fail to submit an older block', async () => {
-    try {
-      const [blockPda, _] = await createBlock(
-        343069,
-        blockRoot,
-        1647469619
-      );
-    } catch(err) {
-      // the error message will include the custom program error
-      expect(err.toString().includes('CannotSubmitOlderData')).to.equal(true);
-    }
-  });
-
-  it('should fail to submit a block from a non-replicator keypair', async () => {
-    const newKeyPair = Keypair.generate();
-    const newWallet = new Wallet(newKeyPair);
-
-    const newProvider = new Provider(
-      anchor.getProvider().connection,
-      newWallet,
-      anchor.getProvider().opts
-    );
-
-    anchor.setProvider(newProvider);
-    program = getDeployedProgram();
-
-    const [blockPda, seed] = await derivePDAFromBlockId(
-      343100,
-      program.programId
-    );
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    const airdropSignature = await newProvider.connection.requestAirdrop(
-      newKeyPair.publicKey,
-      LAMPORTS_PER_SOL * 2,
-    );
-
-    await newProvider.connection.confirmTransaction(airdropSignature);
-
-    try {
-      await program.rpc.submit(
-        seed,
-        343100,
-        encodeBlockRoot(blockRoot),
-        1647469700,
-        {
-          accounts: {
-            owner: newWallet.publicKey,
-            authority: authorityPda,
-            block: blockPda,
-            status: statusPda,
-            systemProgram: SystemProgram.programId,
-          },
-        }
-      );
-    } catch(err) {
-      // the error message will include the custom program error
-      expect(err.toString().includes('OnlyOwnerViolation')).to.equal(true);
-    }
-  });
-
-  it('should set the padding', async () => {
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    const newPadding = 300;
-
-    await program.rpc.setPadding(
-      newPadding,
-      {
-        accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          status: statusPda,
-          systemProgram: SystemProgram.programId,
-        },
-      }
-    );
-
-    expect((await program.account.status.fetch(statusPda)).padding).to.equal(newPadding);
-  });
-
-  it('should fail to set padding by a non-replicator keypair', async () => {
-    const newPadding = 1000;
-    const newKeyPair = Keypair.generate();
-    const newWallet = new Wallet(newKeyPair);
-
-    const newProvider = new Provider(
-      anchor.getProvider().connection,
-      newWallet,
-      anchor.getProvider().opts
-    );
-
-    anchor.setProvider(newProvider);
-    program = getDeployedProgram();
-
-    const [blockPda, seed] = await derivePDAFromBlockId(
-      343100,
-      program.programId
-    );
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    const oldPadding = (await program.account.status.fetch(statusPda)).padding
-
-    const airdropSignature = await newProvider.connection.requestAirdrop(
-      newKeyPair.publicKey,
-      LAMPORTS_PER_SOL * 2,
-    );
-
-    await newProvider.connection.confirmTransaction(airdropSignature);
-
-    try {
-      await program.rpc.setPadding(
-        newPadding,
-        {
-          accounts: {
-            owner: newWallet.publicKey,
-            authority: authorityPda,
-            status: statusPda,
-            systemProgram: SystemProgram.programId,
-          },
-        }
-      );
-    } catch(err) {
-      // the error message will include the custom program error
-      expect(err.toString().includes('OnlyOwnerViolation')).to.equal(true);
-    }
-
-    expect((await program.account.status.fetch(statusPda)).padding).to.equal(oldPadding);
-  });
-
-  const testCasesPrefixCoverage = [
-    {key: 'REGULAR_EXAMPLE', value: 3001.23},
-    {key: 'FIXED_EXAMPLE', value: '1064147852234612576455791553397172981'},
-    {key: 'SN_EXAMPLE', value: -0.1234},
-  ];
-
-  testCasesPrefixCoverage.forEach(({key, value}) => {
-    it(`creates fcd account for key ${key} and value ${value}`, async () => {
-      const [fcdPda, _] = await createFCD(
-        key,
-        value,
-        1647469325
-      );
-
-      const fcd = await program.account.firstClassData.fetch(fcdPda);
-      expect(fcd.key).to.equal(key);
-      expect(fcd.timestamp).to.equal(timestamp);
-      expect(decodeDataValue(fcd.value, key)).to.equal(value);
-    });
-  });
-
-  testCasesPrefixCoverage.forEach(({key, value}) => {
-    it(`fails to create fcd account that is already initialized`, async () => {
-      try {
-        await createFCD(
-          key,
-          value,
-          1647469325
-        );
-      } catch(err) {
-        expect(err.toString().includes('Transaction simulation failed'));
-      }
-    });
-  });
-
-  const actualFCDTestCases = [
-    {key: 'AAVE-USD', value: 191.6},
-    {key: 'BNB-USD', value: 428.39},
-    {key: 'BNT-USD', value: 2.564},
-    {key: 'BTC-USD', value: 42917.52},
-    {key: 'COMP-USD', value: 139.38},
-    {key: 'DAI-USD', value: 1},
-    {key: 'ETH-USD', value: 3255.49},
-    {key: 'FTS-USD', value: 0.04661436},
-    {key: 'GVol-BTC-IV-28days', value: 68.8},
-    {key: 'GVol-ETH-IV-28days', value: 76.98},
-    {key: 'LINK-USD', value: 15.47},
-    {key: 'MAHA-USD', value: 3.81},
-    {key: 'REN-USD', value: 0.408},
-    {key: 'SNX-USD', value: 5.48},
-    {key: 'UMB-USD', value: 0.11},
-    {key: 'UNI-USD', value: 9.93},
-    {key: 'YFI-USD', value: 20937.25},
-  ];
-
-  actualFCDTestCases.forEach(({key, value}) => {
-    it(`creates fcd account for key ${key} and value ${value}`, async () => {
-      const timestamp = 1647469325;
-
-      const [fcdPda, _] = await createFCD(
-        key,
-        value,
-        timestamp
-      );
-
-      const fcd = await program.account.firstClassData.fetch(fcdPda);
-      expect(fcd.key).to.equal(key);
-      expect(fcd.timestamp).to.equal(timestamp);
-      expect(decodeDataValue(fcd.value, key)).to.equal(value);
-    });
-  });
-
-  actualFCDTestCases.forEach(({key, value}) => {
-    it(`updates fcd value for for key ${key} and value ${value}`, async () => {
-      const newValue = parseFloat((value * 1.1).toFixed(5));
-      const timestamp = 1647469350;
-
-      const fcdPda = await updateFCD(
-        key,
-        newValue,
-        timestamp
-      );
-
-      const fcd = await program.account.firstClassData.fetch(fcdPda);
-      expect(fcd.key).to.equal(key);
-      expect(fcd.timestamp).to.equal(timestamp);
-      expect(decodeDataValue(fcd.value, key)).to.equal(newValue);
-    });
-  });
-
-  it('should update all FCDs at the same time', async () => {
-    const promises = [];
-    const timestamp = 1647469450;
-
-    actualFCDTestCases.forEach(({key, value}) => {
-      console.log(`updating ${key}`);
-      const newValue = parseFloat((value * 1.2).toFixed(5));
-
-      promises.push(updateFCD(
-        key,
-        newValue,
-        timestamp
-      ));
-    });
-
-    await Promise.allSettled(promises);
-
-    for (const {key, value} of actualFCDTestCases) {
-      const newValue = parseFloat((value * 1.2).toFixed(5));
-
-      const [fcdPda, _] = await derivePDAFromFCDKey(
-        key,
-        program.programId
-      );
-
-      const fcd = await program.account.firstClassData.fetch(fcdPda);
-      expect(fcd.key).to.equal(key);
-      expect(fcd.timestamp).to.equal(timestamp);
-      expect(decodeDataValue(fcd.value, key)).to.equal(newValue);
-    }
-  });
+    console.log(t);
   */
 });

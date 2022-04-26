@@ -10,7 +10,9 @@ pub fn initialize_verify_result(ctx: Context<InitializeVerifyResult>) -> Result<
     Ok(())
 }
 
-pub fn verify_proof_for_block(ctx: Context<Verify>, proof: Vec<[u8;32]>, key: [u8;32], value: [u8;32]) -> Result<()> {
+pub fn verify_proof_for_block(ctx: Context<Verify>, 
+    _seed: Vec<u8>,
+    proof: Vec<[u8;32]>, key: [u8;32], value: [u8;32]) -> Result<()> {
     let root_with_timestamp = ctx.accounts.block.root;
     let squashed_root = extract_root(root_with_timestamp);
 
@@ -20,6 +22,7 @@ pub fn verify_proof_for_block(ctx: Context<Verify>, proof: Vec<[u8;32]>, key: [u
 
     let verify_result = &mut ctx.accounts.verify_result;
     verify_result.result = verify_squashed_root(squashed_root, proof, leaf);
+    msg!("The verification result is = {}", verify_result.result);
     Ok(())
 }
 
@@ -70,7 +73,9 @@ pub struct InitializeVerifyResult<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(seed: Vec<u8>)]
 pub struct Verify<'info> {
+    #[account(seeds = [&seed], bump)]
     pub block: Account<'info, Block>,
     #[account(mut)]
     pub verify_result: Account<'info, VerifyResult>,
