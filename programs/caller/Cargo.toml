@@ -21,3 +21,4 @@ overflow-checks = true
 [dependencies]
 anchor-lang = "0.24.2"
 chain = { path = "../chain", features = ["cpi"] }
+hex = "0.4.3"

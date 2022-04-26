@@ -1,27 +1,29 @@
-use crate::errors::ChainError;
+use crate::{errors::ChainError};
 use crate::state::chain::*;
 use anchor_lang::prelude::*;
 use sha3::{Digest, Keccak256};
 
-pub fn compare_hashes(a: [u8; 32], b: [u8; 32]) -> bool {
-    for (i, _) in a.iter().enumerate() {
-        if a[i] < b[i] {
-            return true;
-        } else if a[i] > b[i] {
-            return false;
-        }
-    }
-    true
-}
 
 pub fn initialize_verify_result(ctx: Context<InitializeVerifyResult>) -> Result<()> {
     let verify_result = &mut ctx.accounts.verify_result;
-    verify_result.root = [0u8; 32];
     verify_result.result = false;
     Ok(())
 }
 
-pub fn compute_root(ctx: Context<ComputeRoot>, proof: Vec<[u8; 32]>, leaf: [u8; 32]) -> Result<()> {
+pub fn verify_proof_for_block(ctx: Context<Verify>, proof: Vec<[u8;32]>, key: [u8;32], value: [u8;32]) -> Result<()> {
+    let root_with_timestamp = ctx.accounts.block.root;
+    let squashed_root = extract_root(root_with_timestamp);
+
+    let mut hasher = Keccak256::new();
+    hasher.update([key, value].concat());
+    let leaf = hasher.finalize().into();
+
+    let verify_result = &mut ctx.accounts.verify_result;
+    verify_result.result = verify_squashed_root(squashed_root, proof, leaf);
+    Ok(())
+}
+
+fn compute_root(proof: Vec<[u8; 32]>, leaf: [u8; 32]) -> [u8; 32] {
     let mut computed_hash: [u8; 32] = leaf;
     for proof_element in proof {
         let mut hasher = Keccak256::new();
@@ -32,23 +34,35 @@ pub fn compute_root(ctx: Context<ComputeRoot>, proof: Vec<[u8; 32]>, leaf: [u8; 
         }
         computed_hash = hasher.finalize().into();
     }
-    ctx.accounts.verify_result.root = computed_hash;
-    Ok(())
+    computed_hash
 }
 
-pub fn verify(ctx: Context<Verify>, root: [u8; 32]) -> Result<()> {
-    let verify_result = &mut ctx.accounts.verify_result;
-    if verify_result.root == root {
-        verify_result.result = true;
-    } else {
-        verify_result.result = false;
+fn verify_squashed_root(squashed_root: [u8;32], proof: Vec<[u8;32]>, leaf: [u8;32]) -> bool {
+    extract_root(compute_root(proof, leaf)) == extract_root(squashed_root)
+}
+
+fn extract_root(root_with_timestamp: [u8;32]) -> [u8;32] {
+    let mut result = root_with_timestamp.clone();
+    for i in 28..32 {
+        result[i] = 0u8;
     }
-    Ok(())
+    result
+}
+
+fn compare_hashes(a: [u8; 32], b: [u8; 32]) -> bool {
+    for (i, _) in a.iter().enumerate() {
+        if a[i] < b[i] {
+            return true;
+        } else if a[i] > b[i] {
+            return false;
+        }
+    }
+    true
 }
 
 #[derive(Accounts)]
 pub struct InitializeVerifyResult<'info> {
-    #[account(init, payer = user, space = 8 + 32 + 1)]
+    #[account(init, payer = user, space = 8 + 1)]
     pub verify_result: Account<'info, VerifyResult>,
     #[account(mut)]
     pub user: Signer<'info>,
@@ -56,13 +70,8 @@ pub struct InitializeVerifyResult<'info> {
 }
 
 #[derive(Accounts)]
-pub struct ComputeRoot<'info> {
+pub struct Verify<'info> {
+    pub block: Account<'info, Block>,
     #[account(mut)]
     pub verify_result: Account<'info, VerifyResult>,
-}
-
-#[derive(Accounts)]
-pub struct Verify<'info> {
-    #[account(mut)]
-    pub verify_result: Account<'info, VerifyResult>
 }

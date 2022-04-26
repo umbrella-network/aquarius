@@ -35,6 +35,5 @@ pub struct FirstClassData {
 #[account]
 #[derive(Default)]
 pub struct VerifyResult {
-    pub root: [u8; 32],
     pub result: bool,
 }

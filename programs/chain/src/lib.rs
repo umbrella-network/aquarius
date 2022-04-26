@@ -6,7 +6,7 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("EbSepbFDoxkv8LEuLg8ZDtSJimpgivb1ETvBoRKQF7DT");
+declare_id!("3nizRNsw6gatu67oXhBQaGfFgmabzXUCPYUouucfapFZ");
 
 #[program]
 pub mod chain {
@@ -85,12 +85,16 @@ pub mod chain {
         instructions::verify::initialize_verify_result(ctx)
     }
 
-    pub fn compute_root(ctx: Context<ComputeRoot>, proof: Vec<[u8; 32]>, leaf: [u8; 32]) -> Result<()> {
-        instructions::verify::compute_root(ctx, proof, leaf)
+    pub fn verify_proof_for_block(ctx: Context<Verify>, proof: Vec<[u8;32]>, key: [u8;32], value: [u8;32]) -> Result<()> {
+        instructions::verify::verify_proof_for_block(ctx, proof, key, value)
     }
 
-    pub fn verify(ctx: Context<Verify>, root: [u8; 32]) -> Result<()> {
-        instructions::verify::verify(ctx, root)
+    pub fn verify_true(ctx: Context<CpiReturn>) -> Result<bool> {
+        Ok(false)
+    }
+
+    pub fn initialize_cpi(ctx: Context<InitializeCpiReturnAccount>) -> Result<()> {
+        Ok(())
     }
 }
 
@@ -100,7 +104,7 @@ pub mod chain {
 //}
 
 #[derive(Accounts)]
-pub struct Initialize1<'info> {
+pub struct InitializeCpiReturnAccount<'info> {
     #[account(init, payer = user, space = 8 + 8)]
     pub account: Account<'info, CpiReturnAccount>,
     #[account(mut)]
