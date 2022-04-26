@@ -28,12 +28,49 @@ function getFirstBlockData() {
 }
 
 describe('verify', async () => {
+
   let program: Program<Chain | Idl>,
     programId: PublicKey,
     idl: Idl,
     blockId: number,
     blockRoot: string,
     timestamp: number;
+
+  const createBlock = async (blockId: number, blockRoot: string, timestamp: number): Promise<[PublicKey, Buffer]> => {
+    const [blockPda, seed] = await derivePDAFromBlockId(
+      blockId,
+      program.programId
+    );
+
+    const [
+      authorityPda,
+      statusPda,
+    ] = await getStateStructPDAs(programId);
+
+    // test
+    const additionalAccount = Keypair.generate().publicKey;
+
+    await program.rpc.submit(
+      seed,
+      blockId,
+      encodeBlockRoot(blockRoot),
+      timestamp,
+      {
+        accounts: {
+          owner: anchor.getProvider().wallet.publicKey,
+          authority: authorityPda,
+          block: blockPda,
+          status: statusPda,
+          systemProgram: SystemProgram.programId,
+        },
+      },
+    );
+
+    return [
+      blockPda,
+      seed
+    ]
+  }
 
   const getStateStructPDAs = async (programIdArg) => {
     const authorityPda = await getPublicKeyForSeed(
@@ -71,6 +108,43 @@ describe('verify', async () => {
     idl = program.idl;
     expect(!!program).to.equal(true);
     expect(programId.toBase58()).to.equal(getAddressFromToml('chain'));
+  });
+
+  it('initializes program', async () => {
+    const padding = 10;
+
+    const [
+      authorityPda,
+      statusPda,
+    ] = await getStateStructPDAs(programId);
+
+    await program.rpc.initialize(
+      padding,
+      {
+        accounts: {
+          initializer: anchor.getProvider().wallet.publicKey,
+          authority: authorityPda,
+          status: statusPda,
+          systemProgram: SystemProgram.programId,
+        },
+      }
+    );
+
+    expect((await program.account.status.fetch(statusPda)).padding).to.equal(padding);
+    expect((await program.account.status.fetch(statusPda)).lastId).to.equal(0);
+    expect((await program.account.status.fetch(statusPda)).lastDataTimestamp).to.equal(0);
+    expect((await program.account.status.fetch(statusPda)).nextBlockId).to.equal(0);
+
+    expect(
+      (await program.account.authority.fetch(authorityPda))
+        .owner
+        .toBase58()
+    ).to.equal(
+      anchor.getProvider()
+        .wallet
+        .publicKey
+        .toBase58()
+    );
   });
 
   it('initialize `VerifyResult` account', async () => {
@@ -230,8 +304,23 @@ describe('verify', async () => {
 
     expect(result.result).to.equal(false);
   });
-  /*
-  */
+
+  it('creates block, using blockId to generate pda', async () => {
+    const [blockPda, _] = await createBlock(
+      blockId,
+      blockRoot,
+      timestamp
+    );
+
+    expect(
+      decodeBlockRoot(
+        (await program.account.block.fetch(blockPda)).root
+      )
+    ).to.equal(blockRoot);
+
+    expect((await program.account.block.fetch(blockPda)).blockId).to.equal(blockId);
+    expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(timestamp);
+  });
 
 /*
   it('should fail to initialize program again', async () => {
