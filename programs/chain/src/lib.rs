@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use instructions::*;
-use state::*;
 
 pub mod errors;
 pub mod instructions;
@@ -81,43 +80,16 @@ pub mod chain {
         )
     }
 
-    pub fn initialize_verify_result(ctx: Context<InitializeVerifyResult>) -> Result<()> {
+    pub fn initialize_verify_result(
+        ctx: Context<InitializeVerifyResult>
+    ) -> Result<()> {
         instructions::verify::initialize_verify_result(ctx)
     }
 
-    pub fn verify_proof_for_block(ctx: Context<Verify>, seed: Vec<u8>, proof: Vec<[u8;32]>, key: [u8;32], value: [u8;32]) -> Result<()> {
+    pub fn verify_proof_for_block(
+        ctx: Context<Verify>, seed: Vec<u8>, proof: Vec<[u8;32]>,
+        key: [u8;32], value: [u8;32]
+    ) -> Result<()> {
         instructions::verify::verify_proof_for_block(ctx, seed, proof, key, value)
     }
-
-    pub fn verify_true(ctx: Context<CpiReturn>) -> Result<bool> {
-        Ok(false)
-    }
-
-    pub fn initialize_cpi(ctx: Context<InitializeCpiReturnAccount>) -> Result<()> {
-        Ok(())
-    }
-}
-
-//#[derive(Accounts)]
-//pub struct CpiReturn<'info> {
-//    pub verify_result: Account<'info, VerifyResult>
-//}
-
-#[derive(Accounts)]
-pub struct InitializeCpiReturnAccount<'info> {
-    #[account(init, payer = user, space = 8 + 8)]
-    pub account: Account<'info, CpiReturnAccount>,
-    #[account(mut)]
-    pub user: Signer<'info>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct CpiReturn<'info> {
-    pub account: Account<'info, CpiReturnAccount>,
-}
-
-#[account]
-pub struct CpiReturnAccount {
-    pub value: u64,
 }

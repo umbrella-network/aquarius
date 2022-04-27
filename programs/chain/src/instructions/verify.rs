@@ -2,18 +2,17 @@ use crate::state::chain::*;
 use anchor_lang::prelude::*;
 use sha3::{Digest, Keccak256};
 
-pub fn initialize_verify_result(ctx: Context<InitializeVerifyResult>) -> Result<()> {
+pub fn initialize_verify_result(
+    ctx: Context<InitializeVerifyResult>
+) -> Result<()> {
     let verify_result = &mut ctx.accounts.verify_result;
     verify_result.result = false;
     Ok(())
 }
 
 pub fn verify_proof_for_block(
-    ctx: Context<Verify>, 
-    _seed: Vec<u8>,
-    proof: Vec<[u8;32]>,
-    key: [u8;32],
-    value: [u8;32]
+    ctx: Context<Verify>, _seed: Vec<u8>,
+    proof: Vec<[u8;32]>, key: [u8;32], value: [u8;32]
 ) -> Result<()> {
     let squashed_root = ctx.accounts.block.root;
 
@@ -41,7 +40,9 @@ fn compute_root(proof: Vec<[u8; 32]>, leaf: [u8; 32]) -> [u8; 32] {
     computed_hash
 }
 
-fn verify_squashed_root(squashed_root: [u8;32], proof: Vec<[u8;32]>, leaf: [u8;32]) -> bool {
+fn verify_squashed_root(
+    squashed_root: [u8;32], proof: Vec<[u8;32]>, leaf: [u8;32]
+) -> bool {
     extract_root(compute_root(proof, leaf)) == extract_root(squashed_root)
 }
 

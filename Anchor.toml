@@ -2,8 +2,8 @@
 seeds = false
 
 [programs.localnet]
-chain = "EbSepbFDoxkv8LEuLg8ZDtSJimpgivb1ETvBoRKQF7DT"
-caller = "BihG3sjCdfDQF9HwoVTWRM1Es4NhFzU2axkgdJMv1YD9"
+chain = "3nizRNsw6gatu67oXhBQaGfFgmabzXUCPYUouucfapFZ"
+caller = "BLW5orYzT75AJH174XTcQ5BdWYUzQyxNUT75hDetAoyg"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -14,4 +14,5 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 # test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/chain/verify.test.ts"
+#test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/chain/verify.test.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/chain/caller.test.ts"

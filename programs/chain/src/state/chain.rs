@@ -1,4 +1,3 @@
-use crate::errors::ChainError;
 use anchor_lang::prelude::*;
 
 #[account]
