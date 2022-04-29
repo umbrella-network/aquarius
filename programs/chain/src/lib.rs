@@ -5,7 +5,7 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
-declare_id!("3nizRNsw6gatu67oXhBQaGfFgmabzXUCPYUouucfapFZ");
+declare_id!("4SPgs3L7Ey9VyRuZwx4X3y86LSAZXP2Hhpz9Sps4v3iT");
 
 #[program]
 pub mod chain {

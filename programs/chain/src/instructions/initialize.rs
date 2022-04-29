@@ -2,7 +2,7 @@ use crate::errors::ChainError;
 use crate::state::chain::*;
 use anchor_lang::prelude::*;
 
-static INITIALIZER: &'static str = "4XhnoTayXeqDT64ULBYpKSi328SQCw3wHKFDqgA679VZ";
+static INITIALIZER: &'static str = "BWujass7Wx77tKWYyckdNnBav6pjVA3tuaDvLAdpfS67";
 
 pub fn initialize(
     ctx: Context<Initialize>,

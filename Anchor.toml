@@ -5,11 +5,15 @@ seeds = false
 chain = "3nizRNsw6gatu67oXhBQaGfFgmabzXUCPYUouucfapFZ"
 caller = "BLW5orYzT75AJH174XTcQ5BdWYUzQyxNUT75hDetAoyg"
 
+[programs.devnet]
+chain = "3nizRNsw6gatu67oXhBQaGfFgmabzXUCPYUouucfapFZ"
+caller = "BLW5orYzT75AJH174XTcQ5BdWYUzQyxNUT75hDetAoyg"
+
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "localnet"
+cluster = "localnet" # "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

@@ -5,16 +5,11 @@ use chain::{self};
 use chain::state::{Block, VerifyResult};
 use hex;
 
-
 declare_id!("BLW5orYzT75AJH174XTcQ5BdWYUzQyxNUT75hDetAoyg");
 
 #[program]
 pub mod caller {
     use super::*;
-
-    //pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-    //    Ok(())
-    //}
 
     pub fn cpi_call_verify_true(
         ctx: Context<CpiReturnContext>,
@@ -32,6 +27,7 @@ pub mod caller {
         assert_eq!(hex::decode_to_slice("5800000000000000000000000000000000000000000000000000000000000000", &mut value as &mut [u8]), Ok(()));
 
         let cpi_program = ctx.accounts.cpi_return_program.to_account_info();
+
         let cpi_accounts = Verify {
             block: ctx.accounts.block.to_account_info(),
             verify_result: ctx.accounts.cpi_return.to_account_info(),
@@ -57,6 +53,7 @@ pub mod caller {
         assert_eq!(hex::decode_to_slice("5800000000000000000000000000000000000000000000000000000000000000", &mut value as &mut [u8]), Ok(()));
 
         let cpi_program = ctx.accounts.cpi_return_program.to_account_info();
+
         let cpi_accounts = Verify {
             block: ctx.accounts.block.to_account_info(),
             verify_result: ctx.accounts.cpi_return.to_account_info(),
@@ -82,6 +79,7 @@ pub mod caller {
         assert_eq!(hex::decode_to_slice("5800000000000000000000000000000000000000000000000000000000000000", &mut value as &mut [u8]), Ok(()));
 
         let cpi_program = ctx.accounts.cpi_return_program.to_account_info();
+
         let cpi_accounts = Verify {
             block: ctx.accounts.block.to_account_info(),
             verify_result: ctx.accounts.cpi_return.to_account_info(),
@@ -107,6 +105,7 @@ pub mod caller {
         assert_eq!(hex::decode_to_slice("5800000000000000000000000000000000000000000000000000000000000001", &mut value as &mut [u8]), Ok(()));
 
         let cpi_program = ctx.accounts.cpi_return_program.to_account_info();
+
         let cpi_accounts = Verify {
             block: ctx.accounts.block.to_account_info(),
             verify_result: ctx.accounts.cpi_return.to_account_info(),
@@ -118,10 +117,6 @@ pub mod caller {
 }
 
 #[derive(Accounts)]
-pub struct Initialize {}
-
-
-#[derive(Accounts)]
 // #[instruction(seed: Vec<u8>)]
 pub struct CpiReturnContext<'info> {
     #[account(mut)]
@@ -131,6 +126,3 @@ pub struct CpiReturnContext<'info> {
 
     pub cpi_return_program: Program<'info, Chain>,
 }
-
-#[derive(Accounts)]
-pub struct ReturnContext {}

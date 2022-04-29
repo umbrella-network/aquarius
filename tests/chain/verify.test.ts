@@ -1,6 +1,6 @@
 import * as anchor from '@project-serum/anchor';
-import {Program, Idl, Wallet, Provider} from '@project-serum/anchor';
-import {PublicKey, SystemProgram, Keypair, LAMPORTS_PER_SOL} from '@solana/web3.js';
+import {Program, Idl} from '@project-serum/anchor';
+import {PublicKey, SystemProgram, Keypair} from '@solana/web3.js';
 import {Chain} from '../../target/types/chain';
 import {expect} from 'chai';
 
@@ -8,18 +8,15 @@ import {
   getPublicKeyForSeed,
   getAddressFromToml,
   derivePDAFromBlockId,
-  derivePDAFromFCDKey,
   encodeBlockRoot,
   decodeBlockRoot,
-  encodeDataValue,
-  decodeDataValue,
 } from '../utils';
-import { assert } from 'console';
 
 function getFirstBlockData() {
   const blockId = 343062;
   const blockRoot = '0xa875e64b4762d5a34bf3b0346829c407fa82eaedb67d41c6aa4a350800000000';
   const timestamp = 1647469325;
+
   return {
     blockId,
     blockRoot,
@@ -46,9 +43,6 @@ describe('verify', async () => {
       authorityPda,
       statusPda,
     ] = await getStateStructPDAs(programId);
-
-    // test
-    const additionalAccount = Keypair.generate().publicKey;
 
     await program.rpc.submit(
       seed,
@@ -87,14 +81,6 @@ describe('verify', async () => {
       authorityPda,
       statusPda,
     ];
-  }
-
-  const getDeployedProgram = () => {
-    return new Program(
-      idl,
-      programId,
-      anchor.getProvider()
-    );
   }
 
   const verifyResultAccount = anchor.web3.Keypair.generate();
@@ -167,9 +153,7 @@ describe('verify', async () => {
       1234567
     );
 
-    expect(
-      decodeBlockRoot((await program.account.block.fetch(blockPda)).root)
-    ).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605');
+    expect(decodeBlockRoot((await program.account.block.fetch(blockPda)).root)).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605');
     expect((await program.account.block.fetch(blockPda)).blockId).to.equal(1234);
     expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(1234567);
   });
@@ -192,11 +176,13 @@ describe('verify', async () => {
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
       1234568
     );
+
     const proofs = [
       encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
       encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
       encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
-    ]
+    ];
+
     const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
     const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
 
@@ -218,11 +204,13 @@ describe('verify', async () => {
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
       1234569
     );
+
     const proofs = [
       encodeBlockRoot('0xdeadbeaf547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
       encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
       encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
-    ]
+    ];
+
     const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
     const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
 
@@ -244,11 +232,13 @@ describe('verify', async () => {
       '0xdeadbeef031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
       1234570
     );
+
     const proofs = [
       encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
       encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
       encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
-    ]
+    ];
+
     const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
     const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
 
@@ -264,11 +254,4 @@ describe('verify', async () => {
     expect(result.result == false)
   });
   
-  /*
-    console.log(tx);
-    let t = await anchor.getProvider().connection.getTransaction(tx, {
-      commitment: "confirmed",
-    });
-    console.log(t);
-  */
 });
