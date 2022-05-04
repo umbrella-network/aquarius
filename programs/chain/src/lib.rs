@@ -79,4 +79,17 @@ pub mod chain {
             timestamp
         )
     }
+
+    pub fn initialize_verify_result(
+        ctx: Context<InitializeVerifyResult>
+    ) -> Result<()> {
+        instructions::verify::initialize_verify_result(ctx)
+    }
+
+    pub fn verify_proof_for_block(
+        ctx: Context<Verify>, seed: Vec<u8>, proof: Vec<[u8;32]>,
+        key: [u8;32], value: [u8;32]
+    ) -> Result<()> {
+        instructions::verify::verify_proof_for_block(ctx, seed, proof, key, value)
+    }
 }

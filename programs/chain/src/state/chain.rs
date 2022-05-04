@@ -1,4 +1,3 @@
-use crate::errors::ChainError;
 use anchor_lang::prelude::*;
 
 #[account]
@@ -30,4 +29,10 @@ pub struct FirstClassData {
     pub key: String,
     pub value: [u8; 32],
     pub timestamp: u32
+}
+
+#[account]
+#[derive(Default)]
+pub struct VerifyResult {
+    pub result: bool,
 }
