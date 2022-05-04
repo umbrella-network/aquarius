@@ -97,43 +97,6 @@ describe('verify', async () => {
     expect(programId.toBase58()).to.equal(getAddressFromToml('chain'));
   });
 
-  it('initializes program', async () => {
-    const padding = 10;
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(programId);
-
-    await program.rpc.initialize(
-      padding,
-      {
-        accounts: {
-          initializer: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          status: statusPda,
-          systemProgram: SystemProgram.programId,
-        },
-      }
-    );
-
-    expect((await program.account.status.fetch(statusPda)).padding).to.equal(padding);
-    expect((await program.account.status.fetch(statusPda)).lastId).to.equal(0);
-    expect((await program.account.status.fetch(statusPda)).lastDataTimestamp).to.equal(0);
-    expect((await program.account.status.fetch(statusPda)).nextBlockId).to.equal(0);
-
-    expect(
-      (await program.account.authority.fetch(authorityPda))
-        .owner
-        .toBase58()
-    ).to.equal(
-      anchor.getProvider()
-        .wallet
-        .publicKey
-        .toBase58()
-    );
-  });
-
   it('initialize `VerifyResult` account', async () => {
     await program.rpc.initializeVerifyResult(
       {
@@ -148,22 +111,22 @@ describe('verify', async () => {
 
   it('creates block, using blockId to generate pda', async () => {
     const [blockPda, _] = await createBlock(
-      1234,
+      1334,
       '0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605',
-      1234567
+      1651640200
     );
 
     expect(decodeBlockRoot((await program.account.block.fetch(blockPda)).root)).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605');
-    expect((await program.account.block.fetch(blockPda)).blockId).to.equal(1234);
-    expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(1234567);
+    expect((await program.account.block.fetch(blockPda)).blockId).to.equal(1334);
+    expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(1651640200);
   });
 
   it('fails to create another block with the same information as the previous one', async () => {
     try {
       const [blockPda, _] = await createBlock(
-        1234,
+        1334,
         '0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605',
-        1234567
+        1651640200
       );
     } catch (err) {
       expect(err.logs.find(log => log.includes("Allocate: account Address") && log.includes("already in use")) !== undefined);
@@ -172,9 +135,9 @@ describe('verify', async () => {
 
   it('verifies the proof of a submitted block', async () => {
     const [blockPda, seed] = await createBlock(
-      1235,
+      1335,
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-      1234568
+      1651641200
     );
 
     const proofs = [
@@ -200,9 +163,9 @@ describe('verify', async () => {
 
   it('fails for false proofs', async () => {
     const [blockPda, seed] = await createBlock(
-      1236,
+      1336,
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-      1234569
+      1651642200
     );
 
     const proofs = [
@@ -228,9 +191,9 @@ describe('verify', async () => {
 
   it('fails for a tempered block', async () => {
     const [blockPda, seed] = await createBlock(
-      1237,
+      1337,
       '0xdeadbeef031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-      1234570
+      1651643200
     );
 
     const proofs = [
@@ -253,5 +216,4 @@ describe('verify', async () => {
     let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
     expect(result.result == false)
   });
-  
 });

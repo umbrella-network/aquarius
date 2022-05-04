@@ -32,6 +32,7 @@ pub mod caller {
             block: ctx.accounts.block.to_account_info(),
             verify_result: ctx.accounts.cpi_return.to_account_info(),
         };
+
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         let result = chain::cpi::verify_proof_for_block(cpi_ctx, _seed, proofs, key, value)?;
         Ok(())
@@ -58,6 +59,7 @@ pub mod caller {
             block: ctx.accounts.block.to_account_info(),
             verify_result: ctx.accounts.cpi_return.to_account_info(),
         };
+
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         let result = chain::cpi::verify_proof_for_block(cpi_ctx, _seed, proofs, key, value)?;
         Ok(())
@@ -84,6 +86,7 @@ pub mod caller {
             block: ctx.accounts.block.to_account_info(),
             verify_result: ctx.accounts.cpi_return.to_account_info(),
         };
+
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         let result = chain::cpi::verify_proof_for_block(cpi_ctx, _seed, proofs, key, value)?;
         Ok(())
@@ -110,6 +113,7 @@ pub mod caller {
             block: ctx.accounts.block.to_account_info(),
             verify_result: ctx.accounts.cpi_return.to_account_info(),
         };
+
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         let result = chain::cpi::verify_proof_for_block(cpi_ctx, _seed, proofs, key, value)?;
         Ok(())

@@ -89,49 +89,6 @@ describe('caller', async () => {
   const verifyResultAccount = anchor.web3.Keypair.generate();
   const confirmOptions = { commitment: "confirmed" };
 
-  it('deploys new program `chain`', async() => {
-    let programId = chainProgram.programId;
-    expect(!!chainProgram).to.equal(true);
-    expect(programId.toBase58()).to.equal(getAddressFromToml('chain'));
-  })
-
-  it('initializes `chain` program', async () => {
-    const padding = 10;
-
-    const [
-      authorityPda,
-      statusPda,
-    ] = await getStateStructPDAs(chainProgram.programId);
-
-    await chainProgram.rpc.initialize(
-      padding,
-      {
-        accounts: {
-          initializer: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          status: statusPda,
-          systemProgram: SystemProgram.programId,
-        },
-      }
-    );
-
-    expect((await chainProgram.account.status.fetch(statusPda)).padding).to.equal(padding);
-    expect((await chainProgram.account.status.fetch(statusPda)).lastId).to.equal(0);
-    expect((await chainProgram.account.status.fetch(statusPda)).lastDataTimestamp).to.equal(0);
-    expect((await chainProgram.account.status.fetch(statusPda)).nextBlockId).to.equal(0);
-
-    expect(
-      (await chainProgram.account.authority.fetch(authorityPda))
-        .owner
-        .toBase58()
-    ).to.equal(
-      anchor.getProvider()
-        .wallet
-        .publicKey
-        .toBase58()
-    );
-  });
-
   it('deploys new program `caller`', async() => {
     let programId = callerProgram.programId;
     expect(!!callerProgram).to.equal(true);
@@ -152,9 +109,9 @@ describe('caller', async () => {
 
   it('verifies off-chain the proof of a submitted block', async () => {
     const [blockPda, seed] = await createBlock(
-      1235,
+      1338,
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-      1234568
+      1651644200
     );
 
     const proofs = [
@@ -180,9 +137,9 @@ describe('caller', async () => {
 
   it("verifies on-chain through CPI calls the proof of a submitted block", async () => {
     const [blockPda, seed] = await createBlock(
-      1236,
+      1339,
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-      1234569
+      1651645200
     );
 
     let result = await chainProgram.account.verifyResult.fetch(verifyResultAccount.publicKey);
@@ -203,9 +160,9 @@ describe('caller', async () => {
 
   it("fails to verify on-chain through CPI calls with tempered proofs", async () => {
     const [blockPda, seed] = await createBlock(
-      1237,
+      1340,
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-      1234570
+      1651646200
     );
 
     let result = await chainProgram.account.verifyResult.fetch(verifyResultAccount.publicKey);
@@ -226,9 +183,9 @@ describe('caller', async () => {
 
   it("fails to verify on-chain through CPI calls with tempered key", async () => {
     const [blockPda, seed] = await createBlock(
-      1238,
+      1341,
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-      1234571
+      1651647200
     );
 
     let result = await chainProgram.account.verifyResult.fetch(verifyResultAccount.publicKey);
@@ -249,9 +206,9 @@ describe('caller', async () => {
 
   it("fails to verify on-chain through CPI calls with tempered value", async () => {
     const [blockPda, seed] = await createBlock(
-      1239,
+      1342,
       '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-      1234572
+      1651648200
     );
 
     let result = await chainProgram.account.verifyResult.fetch(verifyResultAccount.publicKey);
