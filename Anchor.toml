@@ -2,11 +2,11 @@
 seeds = false
 
 [programs.localnet]
-chain = "3nizRNsw6gatu67oXhBQaGfFgmabzXUCPYUouucfapFZ"
+chain = "4SPgs3L7Ey9VyRuZwx4X3y86LSAZXP2Hhpz9Sps4v3iT"
 caller = "BLW5orYzT75AJH174XTcQ5BdWYUzQyxNUT75hDetAoyg"
 
 [programs.devnet]
-chain = "3nizRNsw6gatu67oXhBQaGfFgmabzXUCPYUouucfapFZ"
+chain = "4SPgs3L7Ey9VyRuZwx4X3y86LSAZXP2Hhpz9Sps4v3iT"
 caller = "BLW5orYzT75AJH174XTcQ5BdWYUzQyxNUT75hDetAoyg"
 
 [registry]
