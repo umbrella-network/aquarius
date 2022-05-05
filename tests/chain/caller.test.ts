@@ -82,7 +82,7 @@ describe('caller', async () => {
 
   let provider;
   before(async () => {
-    provider = anchor.Provider.env();
+    provider = anchor.AnchorProvider.env();
     anchor.setProvider(provider);
   });
 

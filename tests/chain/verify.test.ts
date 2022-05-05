@@ -85,7 +85,8 @@ describe('verify', async () => {
 
   const verifyResultAccount = anchor.web3.Keypair.generate();
   before(async () => {
-    anchor.setProvider(anchor.Provider.env());
+    const provider = anchor.AnchorProvider.env();
+    anchor.setProvider(provider);
     ({ blockId, blockRoot, timestamp } = getFirstBlockData());
   });
 

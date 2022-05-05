@@ -31,9 +31,9 @@ fn compute_root(proof: Vec<[u8; 32]>, leaf: [u8; 32]) -> [u8; 32] {
     for proof_element in proof {
         let mut hasher = Keccak256::new();
         if compare_hashes(proof_element, computed_hash) {
-            hasher.update([computed_hash, proof_element].concat());
-        } else {
             hasher.update([proof_element, computed_hash].concat());
+        } else {
+            hasher.update([computed_hash, proof_element].concat());
         }
         computed_hash = hasher.finalize().into();
     }
