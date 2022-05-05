@@ -152,7 +152,7 @@ describe('caller', async () => {
         cpiReturnProgram: chainProgram.programId,
         block: blockPda,
       })
-      .rpc(confirmOptions);
+      .rpc({commitment: "confirmed"});
   
     result = await chainProgram.account.verifyResult.fetch(verifyResultAccount.publicKey);
     expect(result.result == true)
@@ -175,7 +175,7 @@ describe('caller', async () => {
         cpiReturnProgram: chainProgram.programId,
         block: blockPda,
       })
-      .rpc(confirmOptions);
+      .rpc({commitment: "confirmed"});
   
     result = await chainProgram.account.verifyResult.fetch(verifyResultAccount.publicKey);
     expect(result.result == false)
@@ -198,7 +198,7 @@ describe('caller', async () => {
         cpiReturnProgram: chainProgram.programId,
         block: blockPda,
       })
-      .rpc(confirmOptions);
+      .rpc({commitment: "confirmed"});
   
     result = await chainProgram.account.verifyResult.fetch(verifyResultAccount.publicKey);
     expect(result.result == false)
@@ -221,7 +221,7 @@ describe('caller', async () => {
         cpiReturnProgram: chainProgram.programId,
         block: blockPda,
       })
-      .rpc(confirmOptions);
+      .rpc({commitment: "confirmed"});
   
     result = await chainProgram.account.verifyResult.fetch(verifyResultAccount.publicKey);
     expect(result.result == false)

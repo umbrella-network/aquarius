@@ -137,18 +137,27 @@ describe('verify', async () => {
   it('verifies the proof of a submitted block', async () => {
     const [blockPda, seed] = await createBlock(
       1335,
-      '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
+      '0xff3a1d60902efa015c36f653c5d28e0b4a13bc5bdb8944b218fe2f6f6272b87a',
       1651641200
     );
 
-    const proofs = [
-      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
-      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
-      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    let proofs = [
+      encodeBlockRoot("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82"),
+      encodeBlockRoot("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1"),
+      encodeBlockRoot("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540"),
+      encodeBlockRoot("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453"),
+      encodeBlockRoot("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7"),
+      encodeBlockRoot("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af"),
+      encodeBlockRoot("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f"),
+      encodeBlockRoot("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a"),
+      encodeBlockRoot("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948"),
+      encodeBlockRoot("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643"),
+      encodeBlockRoot("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412"),
+      encodeBlockRoot("0xe1c181e05f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e")
     ];
 
-    const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
-    const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
+    let key   = encodeBlockRoot("0x000000000000000000000000000000000000000000000031494e43482d444149");
+    let value = encodeBlockRoot("0x000000000000000000000000000000000000000000000000259ae7ce85275000");
 
     const tx = await program.methods
       .verifyProofForBlock(seed, proofs, key, value)
@@ -165,18 +174,27 @@ describe('verify', async () => {
   it('fails for false proofs', async () => {
     const [blockPda, seed] = await createBlock(
       1336,
-      '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
+      '0xff3a1d60902efa015c36f653c5d28e0b4a13bc5bdb8944b218fe2f6f6272b87a',
       1651642200
     );
 
-    const proofs = [
-      encodeBlockRoot('0xdeadbeaf547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
-      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
-      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    let proofs = [
+      encodeBlockRoot("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82"),
+      encodeBlockRoot("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1"),
+      encodeBlockRoot("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540"),
+      encodeBlockRoot("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453"),
+      encodeBlockRoot("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7"),
+      encodeBlockRoot("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af"),
+      encodeBlockRoot("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f"),
+      encodeBlockRoot("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a"),
+      encodeBlockRoot("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948"),
+      encodeBlockRoot("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643"),
+      encodeBlockRoot("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412"),
+      encodeBlockRoot("0xdeadbeaf5f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e")
     ];
 
-    const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
-    const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
+    let key   = encodeBlockRoot("0x000000000000000000000000000000000000000000000031494e43482d444149");
+    let value = encodeBlockRoot("0x000000000000000000000000000000000000000000000000259ae7ce85275000");
 
     const tx = await program.methods
       .verifyProofForBlock(seed, proofs, key, value)
@@ -193,18 +211,27 @@ describe('verify', async () => {
   it('fails for a tempered block', async () => {
     const [blockPda, seed] = await createBlock(
       1337,
-      '0xdeadbeef031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
+      '0xdeadbeaf902efa015c36f653c5d28e0b4a13bc5bdb8944b218fe2f6f6272b87a',
       1651643200
     );
 
-    const proofs = [
-      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
-      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
-      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+    let proofs = [
+      encodeBlockRoot("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82"),
+      encodeBlockRoot("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1"),
+      encodeBlockRoot("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540"),
+      encodeBlockRoot("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453"),
+      encodeBlockRoot("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7"),
+      encodeBlockRoot("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af"),
+      encodeBlockRoot("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f"),
+      encodeBlockRoot("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a"),
+      encodeBlockRoot("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948"),
+      encodeBlockRoot("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643"),
+      encodeBlockRoot("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412"),
+      encodeBlockRoot("0xe1c181e05f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e")
     ];
 
-    const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
-    const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
+    let key   = encodeBlockRoot("0x000000000000000000000000000000000000000000000031494e43482d444149");
+    let value = encodeBlockRoot("0x000000000000000000000000000000000000000000000000259ae7ce85275000");
 
     const tx = await program.methods
       .verifyProofForBlock(seed, proofs, key, value)
@@ -217,4 +244,5 @@ describe('verify', async () => {
     let result = await program.account.verifyResult.fetch(verifyResultAccount.publicKey);
     expect(result.result == false)
   });
+
 });

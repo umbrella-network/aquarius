@@ -2,12 +2,12 @@
 seeds = false
 
 [programs.localnet]
-chain = "4SPgs3L7Ey9VyRuZwx4X3y86LSAZXP2Hhpz9Sps4v3iT"
-caller = "BLW5orYzT75AJH174XTcQ5BdWYUzQyxNUT75hDetAoyg"
+chain = "9agqAPFMkmekbTT4tcz8NCjL4WT2Ccpu8ayn1SGzVwC3"
+caller = "BmmRtz8Zf4rjQgWT643QG2eqHVkXzebSsnR7XipFTrAg"
 
 [programs.devnet]
-chain = "4SPgs3L7Ey9VyRuZwx4X3y86LSAZXP2Hhpz9Sps4v3iT"
-caller = "BLW5orYzT75AJH174XTcQ5BdWYUzQyxNUT75hDetAoyg"
+chain = "9agqAPFMkmekbTT4tcz8NCjL4WT2Ccpu8ayn1SGzVwC3"
+caller = "BmmRtz8Zf4rjQgWT643QG2eqHVkXzebSsnR7XipFTrAg"
 
 [registry]
 url = "https://anchor.projectserum.com"

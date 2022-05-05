@@ -1,5 +1,5 @@
 import * as anchor from '@project-serum/anchor';
-import {Program, Idl, Wallet, Provider} from '@project-serum/anchor';
+import {Program, Idl, Wallet} from '@project-serum/anchor';
 import {PublicKey, SystemProgram, Keypair, LAMPORTS_PER_SOL} from '@solana/web3.js';
 import {Chain} from '../../target/types/chain';
 import {expect} from 'chai';
