@@ -12,6 +12,9 @@ import {
   encodeBlockRoot,
 } from '../utils';
 
+const provider: anchor.AnchorProvider = anchor.AnchorProvider.env();
+anchor.setProvider(provider);
+
 describe('caller', async () => {
 
   let callerProgram = anchor.workspace.Caller as Program<Caller>;
@@ -28,21 +31,19 @@ describe('caller', async () => {
       statusPda,
     ] = await getStateStructPDAs(chainProgram.programId);
 
-    await chainProgram.rpc.submit(
+    await chainProgram.methods.submit(
       seed,
       blockId,
       encodeBlockRoot(blockRoot),
-      timestamp,
-      {
-        accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
-          authority: authorityPda,
-          block: blockPda,
-          status: statusPda,
-          systemProgram: SystemProgram.programId,
-        },
-      },
-    );
+      timestamp)
+      .accounts({
+        owner: provider.wallet.publicKey,
+        authority: authorityPda,
+        block: blockPda,
+        status: statusPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc({ commitment: "confirmed" })
 
     return [
       blockPda,
@@ -87,7 +88,6 @@ describe('caller', async () => {
   });
 
   const verifyResultAccount = anchor.web3.Keypair.generate();
-  const confirmOptions = { commitment: "confirmed" };
 
   it('deploys new program `caller`', async() => {
     let programId = callerProgram.programId;
@@ -96,15 +96,14 @@ describe('caller', async () => {
   });
 
   it('initialize `VerifyResult` account', async () => {
-    await chainProgram.rpc.initializeVerifyResult(
-      {
-        accounts: {
-          verifyResult: verifyResultAccount.publicKey,
-          user: anchor.getProvider().wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
-        signers: [verifyResultAccount],
-      });
+    await chainProgram.methods.initializeVerifyResult()
+      .accounts({
+        verifyResult: verifyResultAccount.publicKey,
+        user: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([verifyResultAccount])
+      .rpc({ commitment: "confirmed" })
   });
 
   it('verifies off-chain the proof of a submitted block', async () => {
@@ -115,13 +114,13 @@ describe('caller', async () => {
     );
 
     const proofs = [
-      encodeBlockRoot('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'),
-      encodeBlockRoot('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'),
-      encodeBlockRoot('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'),
+      Buffer.from('0x55747576547286b610e889628b275a282f0ee916319ef219a5cf51ff94ef9179'.slice(2), "hex"),
+      Buffer.from('0xe2ea0a050e929e24840f8d2f358b4811fc57830b37f825e2804cfe1d8739e68d'.slice(2), "hex"),
+      Buffer.from('0x4fc70ae8789647370c93beb224cbf9f61f38618ea38be23087fc2f070c0efaf3'.slice(2), "hex"),
     ]
 
-    const key = encodeBlockRoot('0x4900000000000000000000000000000000000000000000000000000000000000');
-    const value = encodeBlockRoot('0x5800000000000000000000000000000000000000000000000000000000000000');
+    const key   = Buffer.from('0x4900000000000000000000000000000000000000000000000000000000000000'.slice(2), "hex");
+    const value = Buffer.from('0x5800000000000000000000000000000000000000000000000000000000000000'.slice(2), "hex");
 
     const tx = await chainProgram.methods
       .verifyProofForBlock(seed, proofs, key, value)

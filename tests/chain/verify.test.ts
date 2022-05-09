@@ -1,6 +1,6 @@
 import * as anchor from '@project-serum/anchor';
 import {Program, Idl} from '@project-serum/anchor';
-import {PublicKey, SystemProgram, Keypair} from '@solana/web3.js';
+import {PublicKey, SystemProgram} from '@solana/web3.js';
 import {Chain} from '../../target/types/chain';
 import {expect} from 'chai';
 
@@ -12,26 +12,13 @@ import {
   decodeBlockRoot,
 } from '../utils';
 
-function getFirstBlockData() {
-  const blockId = 343062;
-  const blockRoot = '0xa875e64b4762d5a34bf3b0346829c407fa82eaedb67d41c6aa4a350800000000';
-  const timestamp = 1647469325;
-
-  return {
-    blockId,
-    blockRoot,
-    timestamp,
-  }
-}
+const provider: anchor.AnchorProvider = anchor.AnchorProvider.env();
+anchor.setProvider(provider);
 
 describe('verify', async () => {
 
   let program: Program<Chain | Idl>,
-    programId: PublicKey,
-    idl: Idl,
-    blockId: number,
-    blockRoot: string,
-    timestamp: number;
+    programId: PublicKey;
 
   const createBlock = async (blockId: number, blockRoot: string, timestamp: number): Promise<[PublicKey, Buffer]> => {
     const [blockPda, seed] = await derivePDAFromBlockId(
@@ -44,21 +31,20 @@ describe('verify', async () => {
       statusPda,
     ] = await getStateStructPDAs(programId);
 
-    await program.rpc.submit(
+    await program.methods.submit(
       seed,
       blockId,
       encodeBlockRoot(blockRoot),
-      timestamp,
-      {
-        accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
+      timestamp)
+      .accounts(
+        {
+          owner: provider.wallet.publicKey,
           authority: authorityPda,
           block: blockPda,
           status: statusPda,
           systemProgram: SystemProgram.programId,
-        },
-      },
-    );
+        })
+      .rpc({ commitment: "confirmed" });
 
     return [
       blockPda,
@@ -84,16 +70,10 @@ describe('verify', async () => {
   }
 
   const verifyResultAccount = anchor.web3.Keypair.generate();
-  before(async () => {
-    const provider = anchor.AnchorProvider.env();
-    anchor.setProvider(provider);
-    ({ blockId, blockRoot, timestamp } = getFirstBlockData());
-  });
 
   it('deploys new program', async() => {
     program = anchor.workspace.Chain as Program<Chain>;
     programId = program.programId;
-    idl = program.idl;
     expect(!!program).to.equal(true);
     expect(programId.toBase58()).to.equal(getAddressFromToml('chain'));
   });
@@ -103,7 +83,7 @@ describe('verify', async () => {
       {
         accounts: {
           verifyResult: verifyResultAccount.publicKey,
-          user: anchor.getProvider().wallet.publicKey,
+          user: provider.wallet.publicKey,
           systemProgram: SystemProgram.programId,
         },
         signers: [verifyResultAccount],
@@ -117,7 +97,8 @@ describe('verify', async () => {
       1651640200
     );
 
-    expect(decodeBlockRoot((await program.account.block.fetch(blockPda)).root)).to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605');
+    expect(decodeBlockRoot((await program.account.block.fetch(blockPda)).root))
+      .to.equal('0x94ee327959d93a3cec35639bac830d5dc37c0f20ecd0e9cfa47b59d6829de605');
     expect((await program.account.block.fetch(blockPda)).blockId).to.equal(1334);
     expect((await program.account.block.fetch(blockPda)).timestamp).to.equal(1651640200);
   });
@@ -142,22 +123,22 @@ describe('verify', async () => {
     );
 
     let proofs = [
-      encodeBlockRoot("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82"),
-      encodeBlockRoot("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1"),
-      encodeBlockRoot("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540"),
-      encodeBlockRoot("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453"),
-      encodeBlockRoot("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7"),
-      encodeBlockRoot("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af"),
-      encodeBlockRoot("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f"),
-      encodeBlockRoot("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a"),
-      encodeBlockRoot("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948"),
-      encodeBlockRoot("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643"),
-      encodeBlockRoot("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412"),
-      encodeBlockRoot("0xe1c181e05f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e")
-    ];
+      Buffer.from("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82".slice(2), "hex"),
+      Buffer.from("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1".slice(2), "hex"),
+      Buffer.from("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540".slice(2), "hex"),
+      Buffer.from("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453".slice(2), "hex"),
+      Buffer.from("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7".slice(2), "hex"),
+      Buffer.from("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af".slice(2), "hex"),
+      Buffer.from("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f".slice(2), "hex"),
+      Buffer.from("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a".slice(2), "hex"),
+      Buffer.from("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948".slice(2), "hex"),
+      Buffer.from("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643".slice(2), "hex"),
+      Buffer.from("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412".slice(2), "hex"),
+      Buffer.from("0xe1c181e05f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e".slice(2), "hex"),
+    ]
 
-    let key   = encodeBlockRoot("0x000000000000000000000000000000000000000000000031494e43482d444149");
-    let value = encodeBlockRoot("0x000000000000000000000000000000000000000000000000259ae7ce85275000");
+    let key   = Buffer.from("0x000000000000000000000000000000000000000000000031494e43482d444149".slice(2), "hex");
+    let value = Buffer.from("0x000000000000000000000000000000000000000000000000259ae7ce85275000".slice(2), "hex");
 
     const tx = await program.methods
       .verifyProofForBlock(seed, proofs, key, value)
@@ -179,22 +160,22 @@ describe('verify', async () => {
     );
 
     let proofs = [
-      encodeBlockRoot("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82"),
-      encodeBlockRoot("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1"),
-      encodeBlockRoot("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540"),
-      encodeBlockRoot("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453"),
-      encodeBlockRoot("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7"),
-      encodeBlockRoot("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af"),
-      encodeBlockRoot("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f"),
-      encodeBlockRoot("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a"),
-      encodeBlockRoot("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948"),
-      encodeBlockRoot("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643"),
-      encodeBlockRoot("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412"),
-      encodeBlockRoot("0xdeadbeaf5f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e")
+      Buffer.from("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82".slice(2), "hex"),
+      Buffer.from("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1".slice(2), "hex"),
+      Buffer.from("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540".slice(2), "hex"),
+      Buffer.from("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453".slice(2), "hex"),
+      Buffer.from("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7".slice(2), "hex"),
+      Buffer.from("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af".slice(2), "hex"),
+      Buffer.from("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f".slice(2), "hex"),
+      Buffer.from("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a".slice(2), "hex"),
+      Buffer.from("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948".slice(2), "hex"),
+      Buffer.from("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643".slice(2), "hex"),
+      Buffer.from("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412".slice(2), "hex"),
+      Buffer.from("0xdeadbeaf5f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e".slice(2), "hex"),
     ];
 
-    let key   = encodeBlockRoot("0x000000000000000000000000000000000000000000000031494e43482d444149");
-    let value = encodeBlockRoot("0x000000000000000000000000000000000000000000000000259ae7ce85275000");
+    let key   = Buffer.from("0x000000000000000000000000000000000000000000000031494e43482d444149".slice(2), "hex");
+    let value = Buffer.from("0x000000000000000000000000000000000000000000000000259ae7ce85275000".slice(2), "hex");
 
     const tx = await program.methods
       .verifyProofForBlock(seed, proofs, key, value)
@@ -216,22 +197,22 @@ describe('verify', async () => {
     );
 
     let proofs = [
-      encodeBlockRoot("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82"),
-      encodeBlockRoot("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1"),
-      encodeBlockRoot("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540"),
-      encodeBlockRoot("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453"),
-      encodeBlockRoot("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7"),
-      encodeBlockRoot("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af"),
-      encodeBlockRoot("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f"),
-      encodeBlockRoot("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a"),
-      encodeBlockRoot("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948"),
-      encodeBlockRoot("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643"),
-      encodeBlockRoot("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412"),
-      encodeBlockRoot("0xe1c181e05f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e")
+      Buffer.from("0x8aa4e4134178289504b4b6c7c85527b41905cf3d51ad95eaec44a87fbe773b82".slice(2), "hex"),
+      Buffer.from("0x2555c92539183bfa28387c6e98403aeb44f8b7602d0580e4679f2432405b62b1".slice(2), "hex"),
+      Buffer.from("0x6bb2d161e2d374a8aa779e0c61ecef7e82b7a6ba6543bf997212ea164c7ec540".slice(2), "hex"),
+      Buffer.from("0xe3cd6c525d52487eb7439d1042dbd917a9b421fd2656a98a6f8af593fd4f4453".slice(2), "hex"),
+      Buffer.from("0x39afef9403f6ccd794a1bf6c48a55a0d4164d8ab9f32992410f62629bd57a6b7".slice(2), "hex"),
+      Buffer.from("0x72d0fddd950ac6ce7f54a48d4003843d526ee02fc21d8c305012bdd17f7058af".slice(2), "hex"),
+      Buffer.from("0xfb1199eb1639a574b06bd4f2fc619a9004fb55dd9016c6b24c4c79498a24099f".slice(2), "hex"),
+      Buffer.from("0xfa9e1fb3aa77f7249c18bd4dbd99bd9c3766a6bf6ab00eac7d5380732059566a".slice(2), "hex"),
+      Buffer.from("0x81b18433beaada4ee9a058a3eb1580498a61789809abb60517ec0ca5e0bcf948".slice(2), "hex"),
+      Buffer.from("0xa8440a4bf999006045d796a91e23fec4b23eee861ba9735d41dc804a76ae0643".slice(2), "hex"),
+      Buffer.from("0xdcec74631415edf80085bdb0907dfb4dd6928db21ebe31b201b1c61cd5a6b412".slice(2), "hex"),
+      Buffer.from("0xe1c181e05f242407fcce79feb83cad315d8d86e5d668f8fa8586d92f7eab082e".slice(2), "hex"),
     ];
 
-    let key   = encodeBlockRoot("0x000000000000000000000000000000000000000000000031494e43482d444149");
-    let value = encodeBlockRoot("0x000000000000000000000000000000000000000000000000259ae7ce85275000");
+    let key   = Buffer.from("0x000000000000000000000000000000000000000000000031494e43482d444149".slice(2), "hex");
+    let value = Buffer.from("0x000000000000000000000000000000000000000000000000259ae7ce85275000".slice(2), "hex");
 
     const tx = await program.methods
       .verifyProofForBlock(seed, proofs, key, value)
