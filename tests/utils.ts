@@ -63,7 +63,7 @@ export function derivePDAFromSeed(
 // =====================================================================================================================
 
 export function encodeBlockRoot(root: string): Buffer {
-  return LeafValueCoder.encode(root, 'FIXED_');
+  return root.startsWith('0x') ? Buffer.from(root.slice(2), 'hex') : Buffer.from(root, 'hex');
 }
 
 export function decodeBlockRoot(encodedRoot: number[]): string {

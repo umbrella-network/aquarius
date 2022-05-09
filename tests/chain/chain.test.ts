@@ -1,5 +1,5 @@
 import * as anchor from '@project-serum/anchor';
-import {Program, Idl, Wallet, Provider} from '@project-serum/anchor';
+import {Program, Idl, Wallet} from '@project-serum/anchor';
 import {PublicKey, SystemProgram, Keypair, LAMPORTS_PER_SOL} from '@solana/web3.js';
 import {Chain} from '../../target/types/chain';
 import {expect} from 'chai';
@@ -34,6 +34,8 @@ describe('chain', async () => {
     blockRoot: string,
     timestamp: number;
 
+  const provider = anchor.AnchorProvider.env();
+
   const createBlock = async (blockId: number, blockRoot: string, timestamp: number): Promise<[PublicKey, Buffer]> => {
     const [blockPda, seed] = await derivePDAFromBlockId(
       blockId,
@@ -55,7 +57,7 @@ describe('chain', async () => {
       timestamp,
       {
         accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
+          owner: provider.wallet.publicKey,
           authority: authorityPda,
           block: blockPda,
           status: statusPda,
@@ -108,7 +110,7 @@ describe('chain', async () => {
       timestamp,
       {
         accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
+          owner: provider.wallet.publicKey,
           authority: authorityPda,
           fcd: fcdPda,
           systemProgram: SystemProgram.programId,
@@ -143,7 +145,7 @@ describe('chain', async () => {
       timestamp,
       {
         accounts: {
-          owner: anchor.getProvider().wallet.publicKey,
+          owner: provider.wallet.publicKey,
           authority: authorityPda,
           fcd: fcdPda,
           status: statusPda,
@@ -164,12 +166,12 @@ describe('chain', async () => {
   }
 
   before(async () => {
-    anchor.setProvider(anchor.Provider.env());
+    anchor.setProvider(anchor.AnchorProvider.env());
     ({ blockId, blockRoot, timestamp } = getFirstBlockData());
   });
 
   afterEach(async () => {
-    anchor.setProvider(anchor.Provider.env());
+    anchor.setProvider(anchor.AnchorProvider.env());
     program = getDeployedProgram();
   });
 
@@ -198,10 +200,10 @@ describe('chain', async () => {
     const newKeyPair = Keypair.generate();
     const newWallet = new Wallet(newKeyPair);
 
-    const newProvider = new Provider(
-      anchor.getProvider().connection,
+    const newProvider = new anchor.AnchorProvider(
+      provider.connection,
       newWallet,
-      anchor.getProvider().opts
+      provider.opts
     );
 
     anchor.setProvider(newProvider);
@@ -225,11 +227,11 @@ describe('chain', async () => {
         padding,
         {
           accounts: {
-            initializer: anchor.getProvider().wallet.publicKey,
+            initializer: newProvider.wallet.publicKey,
             authority: authorityPda,
             status: statusPda,
             systemProgram: SystemProgram.programId,
-          },
+          }
         }
       );
     } catch(err) {
@@ -250,7 +252,7 @@ describe('chain', async () => {
       padding,
       {
         accounts: {
-          initializer: anchor.getProvider().wallet.publicKey,
+          initializer: provider.wallet.publicKey,
           authority: authorityPda,
           status: statusPda,
           systemProgram: SystemProgram.programId,
@@ -283,12 +285,13 @@ describe('chain', async () => {
       statusPda,
     ] = await getStateStructPDAs(programId);
 
+
     try {
       await program.rpc.initialize(
         padding,
         {
           accounts: {
-            initializer: anchor.getProvider().wallet.publicKey,
+            initializer: provider.wallet.publicKey,
             authority: authorityPda,
             status: statusPda,
             systemProgram: SystemProgram.programId,
@@ -475,10 +478,10 @@ describe('chain', async () => {
 
   const testBlocks = [
     // does not include blockRoot, as this does not update the blockData struct
-    { _blockId: 343063, _timestamp: 1647469326 },
-    { _blockId: 343064, _timestamp: 1647469427 },
-    { _blockId: 343065, _timestamp: 1647469528 },
-    { _blockId: 343070, _timestamp: 1647469629 },
+    { _blockId: 343063, _timestamp: 1647469426 },
+    { _blockId: 343064, _timestamp: 1647469527 },
+    { _blockId: 343065, _timestamp: 1647469628 },
+    { _blockId: 343070, _timestamp: 1647469729 },
   ];
 
   testBlocks.forEach(({_blockId, _timestamp}) => {
@@ -539,10 +542,10 @@ describe('chain', async () => {
     const newKeyPair = Keypair.generate();
     const newWallet = new Wallet(newKeyPair);
 
-    const newProvider = new Provider(
-      anchor.getProvider().connection,
+    const newProvider = new anchor.AnchorProvider(
+      provider.connection,
       newWallet,
-      anchor.getProvider().opts
+      provider.opts
     );
 
     anchor.setProvider(newProvider);
@@ -615,10 +618,10 @@ describe('chain', async () => {
     const newKeyPair = Keypair.generate();
     const newWallet = new Wallet(newKeyPair);
 
-    const newProvider = new Provider(
-      anchor.getProvider().connection,
+    const newProvider = new anchor.AnchorProvider(
+      provider.connection,
       newWallet,
-      anchor.getProvider().opts
+      provider.opts
     );
 
     anchor.setProvider(newProvider);
@@ -720,7 +723,7 @@ describe('chain', async () => {
 
   actualFCDTestCases.forEach(({key, value}) => {
     it(`creates fcd account for key ${key} and value ${value}`, async () => {
-      const timestamp = 1647469325;
+      const timestamp = 1647461325;
 
       const [fcdPda, _] = await createFCD(
         key,
@@ -738,7 +741,7 @@ describe('chain', async () => {
   actualFCDTestCases.forEach(({key, value}) => {
     it(`updates fcd value for for key ${key} and value ${value}`, async () => {
       const newValue = parseFloat((value * 1.1).toFixed(5));
-      const timestamp = 1647469350;
+      const timestamp = 1647469450;
 
       const fcdPda = await updateFCD(
         key,
@@ -755,7 +758,7 @@ describe('chain', async () => {
 
   it('should update all FCDs at the same time', async () => {
     const promises = [];
-    const timestamp = 1647469450;
+    const timestamp = 1647470850;
 
     actualFCDTestCases.forEach(({key, value}) => {
       console.log(`updating ${key}`);
@@ -784,4 +787,5 @@ describe('chain', async () => {
       expect(decodeDataValue(fcd.value, key)).to.equal(newValue);
     }
   });
+
 });
