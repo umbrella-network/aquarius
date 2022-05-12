@@ -154,6 +154,22 @@ pub mod caller {
         let result = chain::cpi::verify_proof_for_block(cpi_ctx, _seed, proofs, key, value)?;
         Ok(())
     }
+
+    pub fn cpi_call_verify_proof_for_block(
+        ctx: Context<CpiReturnContext>,
+        _seed: Vec<u8>, proofs: Vec<[u8;32]>, key: [u8;32], value: [u8;32]
+    ) -> Result<()> {
+        let cpi_program = ctx.accounts.cpi_return_program.to_account_info();
+
+        let cpi_accounts = Verify {
+            block: ctx.accounts.block.to_account_info(),
+            verify_result: ctx.accounts.cpi_return.to_account_info(),
+        };
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        let result = chain::cpi::verify_proof_for_block(cpi_ctx, _seed, proofs, key, value)?;
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
