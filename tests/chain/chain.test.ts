@@ -5,6 +5,10 @@ import {Chain} from '../../target/types/chain';
 import {expect} from 'chai';
 
 import {
+  createFCD,
+  createBlock,
+  updateFCD,
+  getStateStructPDAs,
   getPublicKeyForSeed,
   getAddressFromToml,
   derivePDAFromBlockId,
@@ -36,73 +40,6 @@ describe('chain', async () => {
 
   const provider = anchor.AnchorProvider.env();
 
-  const createBlock = async (blockId: number, blockRoot: string, timestamp: number): Promise<[PublicKey, Buffer]> => {
-    const [blockPda, seed] = await derivePDAFromBlockId(blockId, program.programId);
-
-    const [authorityPda, statusPda] = await getStateStructPDAs(programId);
-
-    // test
-    const additionalAccount = Keypair.generate().publicKey;
-
-    await program.methods
-      .submit(seed, blockId, encodeBlockRoot(blockRoot), timestamp)
-      .accounts({
-        owner: provider.wallet.publicKey,
-        authority: authorityPda,
-        block: blockPda,
-        status: statusPda,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc({commitment: 'confirmed'});
-
-    return [blockPda, seed];
-  };
-
-  const getStateStructPDAs = async (programIdArg) => {
-    const authorityPda = await getPublicKeyForSeed('authority', programIdArg);
-
-    const statusPda = await getPublicKeyForSeed('status', programIdArg);
-
-    return [authorityPda, statusPda];
-  };
-
-  const createFCD = async (key: string, value: number | string, timestamp: number): Promise<[PublicKey, Buffer]> => {
-    const [fcdPda, seed] = await derivePDAFromFCDKey(key, program.programId);
-
-    const [authorityPda] = await getStateStructPDAs(programId);
-
-    await program.methods
-      .initializeFirstClassData(seed, key, encodeDataValue(value, key), timestamp)
-      .accounts({
-        owner: provider.wallet.publicKey,
-        authority: authorityPda,
-        fcd: fcdPda,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc({commitment: 'confirmed'});
-
-    return [fcdPda, seed];
-  };
-
-  const updateFCD = async (key: string, value: number | string, timestamp: number): Promise<PublicKey> => {
-    const [fcdPda, _] = await derivePDAFromFCDKey(key, program.programId);
-
-    const [authorityPda, statusPda] = await getStateStructPDAs(programId);
-
-    await program.methods
-      .updateFirstClassData(key, encodeDataValue(value, key), timestamp)
-      .accounts({
-        owner: provider.wallet.publicKey,
-        authority: authorityPda,
-        fcd: fcdPda,
-        status: statusPda,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc({commitment: 'confirmed'});
-
-    return fcdPda;
-  };
-
   const getDeployedProgram = () => {
     return new Program(idl, programId, anchor.getProvider());
   };
@@ -127,7 +64,7 @@ describe('chain', async () => {
 
   it('fails to create a block before initialized', async () => {
     try {
-      const [blockPda, _] = await createBlock(blockId, blockRoot, timestamp);
+      const [blockPda, _] = await createBlock(provider, program, blockId, blockRoot, timestamp);
     } catch (err) {
       console.log(err);
       expect(err.toString().includes('expected this account to be already initialized')).to.equal(true);
@@ -303,7 +240,7 @@ describe('chain', async () => {
   });
 
   it('creates block, using blockId to generate pda', async () => {
-    const [blockPda, _] = await createBlock(blockId, blockRoot, timestamp);
+    const [blockPda, _] = await createBlock(provider, program, blockId, blockRoot, timestamp);
 
     expect(decodeBlockRoot((await program.account.block.fetch(blockPda)).root)).to.equal(blockRoot);
 
@@ -340,7 +277,7 @@ describe('chain', async () => {
 
   testBlocks.forEach(({_blockId, _timestamp}) => {
     it('create block and confirm block data struct is updated', async () => {
-      const [blockPda, _] = await createBlock(_blockId, blockRoot, _timestamp);
+      const [blockPda, _] = await createBlock(provider, program, _blockId, blockRoot, _timestamp);
 
       expect(decodeBlockRoot((await program.account.block.fetch(blockPda)).root)).to.equal(blockRoot);
 
@@ -357,7 +294,7 @@ describe('chain', async () => {
 
   it('should fail to re-submit the same block', async () => {
     try {
-      const [blockPda, _] = await createBlock(blockId, blockRoot, timestamp);
+      const [blockPda, _] = await createBlock(provider, program, blockId, blockRoot, timestamp);
     } catch (err) {
       // this substring in the error message indicates that we tried to init an account the same address
       expect(err.toString().includes('Transaction simulation failed')).to.equal(true);
@@ -366,7 +303,7 @@ describe('chain', async () => {
 
   it('should fail to submit an older block', async () => {
     try {
-      const [blockPda, _] = await createBlock(343069, blockRoot, 1647469619);
+      const [blockPda, _] = await createBlock(provider, program, 343069, blockRoot, 1647469619);
     } catch (err) {
       // the error message will include the custom program error
       expect(err.toString().includes('CannotSubmitOlderData')).to.equal(true);
@@ -471,7 +408,7 @@ describe('chain', async () => {
 
   testCasesPrefixCoverage.forEach(({key, value}) => {
     it(`creates fcd account for key ${key} and value ${value}`, async () => {
-      const [fcdPda, _] = await createFCD(key, value, 1647469325);
+      const [fcdPda, _] = await createFCD(provider, program, key, value, 1647469325);
 
       const fcd = await program.account.firstClassData.fetch(fcdPda);
       expect(fcd.key).to.equal(key);
@@ -483,7 +420,7 @@ describe('chain', async () => {
   testCasesPrefixCoverage.forEach(({key, value}) => {
     it(`fails to create fcd account that is already initialized`, async () => {
       try {
-        await createFCD(key, value, 1647469325);
+        await createFCD(provider, program, key, value, 1647469325);
       } catch (err) {
         expect(err.toString().includes('Transaction simulation failed'));
       }
@@ -514,7 +451,7 @@ describe('chain', async () => {
     it(`creates fcd account for key ${key} and value ${value}`, async () => {
       const timestamp = 1647461325;
 
-      const [fcdPda, _] = await createFCD(key, value, timestamp);
+      const [fcdPda, _] = await createFCD(provider, program, key, value, timestamp);
 
       const fcd = await program.account.firstClassData.fetch(fcdPda);
       expect(fcd.key).to.equal(key);
@@ -528,7 +465,7 @@ describe('chain', async () => {
       const newValue = parseFloat((value * 1.1).toFixed(5));
       const timestamp = 1647469450;
 
-      const fcdPda = await updateFCD(key, newValue, timestamp);
+      const fcdPda = await updateFCD(provider, program, key, newValue, timestamp);
 
       const fcd = await program.account.firstClassData.fetch(fcdPda);
       expect(fcd.key).to.equal(key);
@@ -545,7 +482,7 @@ describe('chain', async () => {
       console.log(`updating ${key}`);
       const newValue = parseFloat((value * 1.2).toFixed(5));
 
-      promises.push(updateFCD(key, newValue, timestamp));
+      promises.push(updateFCD(provider, program, key, newValue, timestamp));
     });
 
     await Promise.allSettled(promises);
