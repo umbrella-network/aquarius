@@ -1,15 +1,59 @@
 use anchor_lang::prelude::*;
 use chain::cpi::accounts::Verify;
 use chain::program::Chain;
-use chain::state::{Block, VerifyResult};
+use chain::state::{Block, FirstClassData, VerifyResult};
 use chain::{self};
+use num_bigint::{BigInt, Sign, ToBigInt};
 use hex;
+
+#[derive(Debug)]
+pub enum Error {
+    U32ToF64ConversionError,
+    BigIntToU32ConversionError,
+}
+
+fn decode_value(value: [u8; 32]) -> std::result::Result<f64, Error> {
+    let whole_part = BigInt::from_bytes_be(Sign::Plus, &value)
+        / 1_000_000_000_000_000_000u128.to_bigint().unwrap();
+    let decimal_part = (BigInt::from_bytes_be(Sign::Plus, &value)
+        % 1_000_000_000_000_000_000u128.to_bigint().unwrap())
+        / 1_000_000_000_000_000u128.to_bigint().unwrap();
+
+    let whole_part: u32 = whole_part
+        .try_into()
+        .map_err(|_| Error::BigIntToU32ConversionError)?;
+    let decimal_part: u32 = decimal_part
+        .try_into()
+        .map_err(|_| Error::BigIntToU32ConversionError)?;
+
+    let whole_part: f64 = whole_part
+        .try_into()
+        .map_err(|_| Error::U32ToF64ConversionError)?;
+    let decimal_part: f64 = decimal_part
+        .try_into()
+        .map_err(|_| Error::U32ToF64ConversionError)?;
+
+    Ok(whole_part + decimal_part * 0.01)
+}
 
 declare_id!("J7xu9NFszHpsZ3XRg2Xc2TNDbGKY2KWtRCcERZ723WRd");
 
 #[program]
 pub mod caller {
     use super::*;
+
+    pub fn read_fcd(ctx: Context<FirstClassDataContext>, _seed: Vec<u8>) -> Result<()> {
+        let fcd_account = &ctx.accounts.fcd;
+        let key = fcd_account.key.clone();
+        let value = fcd_account.value.clone();
+        let timestamp = fcd_account.timestamp.clone();
+
+        msg!("[caller] key: {:?}", key);
+        msg!("[caller] value: {:?}", value);
+        msg!("[caller] value [f64]: {:?}", decode_value(value));
+        msg!("[caller] timestamp: {:?}", timestamp);
+        Ok(())
+    }
 
     pub fn cpi_call_verify_true(ctx: Context<CpiReturnContext>, _seed: Vec<u8>) -> Result<()> {
         let mut proofs = vec![[0u8; 32]; 12];
@@ -505,12 +549,14 @@ pub mod caller {
 }
 
 #[derive(Accounts)]
-// #[instruction(seed: Vec<u8>)]
 pub struct CpiReturnContext<'info> {
     #[account(mut)]
     pub cpi_return: Account<'info, VerifyResult>,
-    //#[account(seeds = [&seed], bump)]
     pub block: Account<'info, Block>,
-
     pub cpi_return_program: Program<'info, Chain>,
+}
+
+#[derive(Accounts)]
+pub struct FirstClassDataContext<'info> {
+    pub fcd: Account<'info, FirstClassData>,
 }

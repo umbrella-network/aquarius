@@ -5,7 +5,7 @@ import {Chain} from '../../target/types/chain';
 import {Caller} from '../../target/types/caller';
 import {expect} from 'chai';
 
-import {createBlock, getAddressFromToml} from '../utils';
+import {derivePDAFromFCDKey, createBlock, getAddressFromToml} from '../utils';
 
 const provider: anchor.AnchorProvider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
@@ -13,17 +13,6 @@ anchor.setProvider(provider);
 describe('caller', async () => {
   let callerProgram = anchor.workspace.Caller as Program<Caller>;
   let chainProgram = anchor.workspace.Chain as Program<Chain>;
-
-  const getReturnLog = (confirmedTransaction) => {
-    const prefix = 'Program return: ';
-
-    let log = confirmedTransaction.meta.logMessages.find((log) => log.startsWith(prefix));
-
-    log = log.slice(prefix.length);
-    const [key, data] = log.split(' ', 2);
-    const buffer = Buffer.from(data, 'base64');
-    return [key, data, buffer];
-  };
 
   let provider;
   before(async () => {
@@ -39,13 +28,20 @@ describe('caller', async () => {
     expect(programId.toBase58()).to.equal(getAddressFromToml('caller'));
   });
 
-  //it('reads FCD on chain', async () => {
-  //  const [blockPda, seed] = await createBlock(
-  //    1338,
-  //    '0xb54bfd1e031ee84e0e78b2a41d388df4ae165d4fa968a53a97ce39a4f33ec4a1',
-  //    1651644200,
-  //  );
-  //});
+  it('reads FCD on chain', async () => {
+    /*
+     This test executes the function on caller
+     */
+    const key = 'BTC-USD';
+    const [fcdPda, seed] = await derivePDAFromFCDKey(key, chainProgram.programId);
+
+    await callerProgram.methods
+      .readFcd(seed)
+      .accounts({
+        fcd: fcdPda,
+      })
+      .rpc({commitment: 'confirmed'});
+  });
 
   it('initialize `VerifyResult` account', async () => {
     await chainProgram.methods

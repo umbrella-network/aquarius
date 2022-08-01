@@ -22,3 +22,4 @@ overflow-checks = true
 anchor-lang = "0.25.0"
 chain = { path = "../chain", features = ["cpi"] }
 hex = "0.4.3"
+num-bigint = "0.4"

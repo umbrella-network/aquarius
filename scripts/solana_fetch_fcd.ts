@@ -1,42 +1,41 @@
-const anchor = require('@project-serum/anchor');
-const {Program} = require('@project-serum/anchor');
-const {PublicKey} = require('@solana/web3.js');
-const {LeafValueCoder, LeafKeyCoder} = require('@umb-network/toolbox');
+import * as anchor from '@project-serum/anchor';
+import {Program} from '@project-serum/anchor';
+import {PublicKey} from '@solana/web3.js';
+import {LeafKeyCoder, LeafValueCoder} from '@umb-network/toolbox';
+import fs from 'fs';
 
-const programId = "9agqAPFMkmekbTT4tcz8NCjL4WT2Ccpu8ayn1SGzVwC3";
+/*
+ Execution example: SOLANA_CHAIN_PROGRAM_ID=4SPgs3L7Ey9VyRuZwx4X3y86LSAZXP2Hhpz9Sps4v3iT SOLANA_CALLER_PROGRAM_ID=BmmRtz8Zf4rjQgWT643QG2eqHVkXzebSsnR7XipFTrAg ANCHOR_PROVIDER_URL="https://api.devnet.solana.com" ANCHOR_WALLET=~/.config/solana/id.json ts-node ./scripts/solana_fetch_fcd.ts
+*/
 
-const IDL = JSON.parse(
-  require("fs").readFileSync("../target/idl/chain.json", "utf8")
-);
+const {SOLANA_CHAIN_PROGRAM_ID} = process.env;
+const chainId = `${SOLANA_CHAIN_PROGRAM_ID}`;
 
-const main = async() => {
+const IDL = JSON.parse(fs.readFileSync('./target/idl/chain.json', 'utf8'));
 
-  const provider = anchor.AnchorProvider.local("https://api.devnet.solana.com");
+const main = async () => {
+  const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  let program = new Program(
-    IDL,
-    new PublicKey(programId),
-    provider
-  );
+  const program = new Program(IDL, new PublicKey(chainId), provider);
 
-  let key = 'BTC-USD';
-
-  let seed = LeafKeyCoder.encode(key);
+  const pair = 'BTC-USD';
+  const seed = LeafKeyCoder.encode(pair);
 
   /*  We derive the Program Derived Account (PDA) for
    *  fetching the data stored on the account
    */
-  let [fcdPda, _] = await PublicKey.findProgramAddress(
-    [seed], program.programId
-  );
+  const [fcdPda] = await PublicKey.findProgramAddress([seed], program.programId);
 
   const fcd = await program.account.firstClassData.fetch(fcdPda);
-  let value = LeafValueCoder.decode('0x' + Buffer.from(fcd.value).toString('hex'), key);
+  const value = LeafValueCoder.decode('0x' + Buffer.from(fcd.value).toString('hex'), pair);
 
-  console.log(key + ' - ' + value + ' - ' + new Date(fcd.timestamp * 1000));
+  console.log(`\n${pair} - ${value} - ${new Date(fcd.timestamp * 1000)}\n`);
 };
 
-main();
-
-export {};
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

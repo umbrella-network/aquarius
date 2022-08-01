@@ -97,6 +97,17 @@ export async function updateFCD(
   return fcdPda;
 }
 
+const getReturnLog = (confirmedTransaction) => {
+  const prefix = 'Program return: ';
+
+  let log = confirmedTransaction.meta.logMessages.find((log) => log.startsWith(prefix));
+
+  log = log.slice(prefix.length);
+  const [key, data] = log.split(' ', 2);
+  const buffer = Buffer.from(data, 'base64');
+  return [key, data, buffer];
+};
+
 // =====================================================================================================================
 //  deriving addresses
 // =====================================================================================================================
