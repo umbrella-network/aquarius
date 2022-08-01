@@ -13,7 +13,7 @@ import {
   decodeBlockRoot,
   encodeDataValue,
   decodeDataValue,
-} from '../utils';
+} from '../../scripts/utils';
 dotenv.config();
 
 describe('utils without provider', async () => {

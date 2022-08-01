@@ -1,5 +1,5 @@
 import * as anchor from '@project-serum/anchor';
-import {PublicKey, Keypair, SystemProgram} from '@solana/web3.js';
+import {PublicKey, Keypair, SystemProgram, Connection} from '@solana/web3.js';
 import {utils, Program, Idl, AnchorProvider} from '@project-serum/anchor';
 import {LeafValueCoder, LeafKeyCoder} from '@umb-network/toolbox';
 import * as toml from 'toml';
@@ -97,15 +97,12 @@ export async function updateFCD(
   return fcdPda;
 }
 
-const getReturnLog = (confirmedTransaction) => {
-  const prefix = 'Program return: ';
+export async function getReturnLog(solanaProvider, tx) {
+  await solanaProvider.confirmTransaction(tx);
 
-  let log = confirmedTransaction.meta.logMessages.find((log) => log.startsWith(prefix));
+  const confirmedTransaction = await solanaProvider.getParsedTransaction(tx);
 
-  log = log.slice(prefix.length);
-  const [key, data] = log.split(' ', 2);
-  const buffer = Buffer.from(data, 'base64');
-  return [key, data, buffer];
+  return confirmedTransaction.meta.logMessages;
 };
 
 // =====================================================================================================================

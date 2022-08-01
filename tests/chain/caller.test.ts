@@ -5,7 +5,7 @@ import {Chain} from '../../target/types/chain';
 import {Caller} from '../../target/types/caller';
 import {expect} from 'chai';
 
-import {derivePDAFromFCDKey, createBlock, getAddressFromToml} from '../utils';
+import {derivePDAFromFCDKey, createBlock, getAddressFromToml} from '../../scripts/utils';
 
 const provider: anchor.AnchorProvider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
@@ -36,7 +36,7 @@ describe('caller', async () => {
     const [fcdPda, seed] = await derivePDAFromFCDKey(key, chainProgram.programId);
 
     await callerProgram.methods
-      .readFcd(seed)
+      .readFcd()
       .accounts({
         fcd: fcdPda,
       })

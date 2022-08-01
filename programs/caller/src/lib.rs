@@ -36,13 +36,13 @@ fn decode_value(value: [u8; 32]) -> std::result::Result<f64, Error> {
     Ok(whole_part + decimal_part * 0.01)
 }
 
-declare_id!("J7xu9NFszHpsZ3XRg2Xc2TNDbGKY2KWtRCcERZ723WRd");
+declare_id!("BAxZZXMFKHn4cw2NJTM83uLSuuhF3BBq76WLKvDkz5xj");
 
 #[program]
 pub mod caller {
     use super::*;
 
-    pub fn read_fcd(ctx: Context<FirstClassDataContext>, _seed: Vec<u8>) -> Result<()> {
+    pub fn read_fcd(ctx: Context<FirstClassDataContext>) -> Result<()> {
         let fcd_account = &ctx.accounts.fcd;
         let key = fcd_account.key.clone();
         let value = fcd_account.value.clone();

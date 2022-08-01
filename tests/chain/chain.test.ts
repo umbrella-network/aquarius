@@ -17,7 +17,7 @@ import {
   decodeBlockRoot,
   encodeDataValue,
   decodeDataValue,
-} from '../utils';
+} from '../../scripts/utils';
 
 function getFirstBlockData() {
   const blockId = 343062;

@@ -131,3 +131,8 @@ static INITIALIZER: &'static str = "BWujass7Wx77tKWYyckdNnBav6pjVA3tuaDvLAdpfS67
 anchor test
 ```
 
+14. Deploy program on devnet/mainnet:
+
+```shell
+anchor deploy --provider.cluster <Anchor.toml config> --program-name <program_name>
+```

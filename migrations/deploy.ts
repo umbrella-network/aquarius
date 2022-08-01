@@ -17,7 +17,7 @@ import {
   encodeBlockRoot,
   decodeBlockRoot,
   getKeyPairFromSecretKeyString
-} from '../tests/utils';
+} from '../scripts/utils';
 
 let program, statusPda, authorityPda;
 

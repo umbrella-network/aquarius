@@ -11,7 +11,7 @@ import {
   derivePDAFromBlockId,
   encodeBlockRoot,
   decodeBlockRoot,
-} from '../utils';
+} from '../../scripts/utils';
 
 const provider: anchor.AnchorProvider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
